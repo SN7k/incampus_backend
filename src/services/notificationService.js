@@ -1,4 +1,4 @@
- import Notification from '../models/Notification.js';
+import Notification from '../models/Notification.js';
 
 // Create notification
 const createNotification = async (data) => {
@@ -12,7 +12,7 @@ const createNotification = async (data) => {
 };
 
 // Create like notification
-const createLikeNotification = async (postId, senderId, recipientId) => {
+export const createLikeNotification = async (postId, senderId, recipientId) => {
   return createNotification({
     type: 'like',
     sender: senderId,
@@ -22,7 +22,7 @@ const createLikeNotification = async (postId, senderId, recipientId) => {
 };
 
 // Create comment notification
-const createCommentNotification = async (postId, commentId, senderId, recipientId) => {
+export const createCommentNotification = async (postId, commentId, senderId, recipientId) => {
   return createNotification({
     type: 'comment',
     sender: senderId,
@@ -33,7 +33,7 @@ const createCommentNotification = async (postId, commentId, senderId, recipientI
 };
 
 // Create friend request notification
-const createFriendRequestNotification = async (senderId, recipientId) => {
+export const createFriendRequestNotification = async (senderId, recipientId) => {
   return createNotification({
     type: 'friend_request',
     sender: senderId,
@@ -42,7 +42,7 @@ const createFriendRequestNotification = async (senderId, recipientId) => {
 };
 
 // Create friend accepted notification
-const createFriendAcceptedNotification = async (senderId, recipientId) => {
+export const createFriendAcceptedNotification = async (senderId, recipientId) => {
   return createNotification({
     type: 'friend_accepted',
     sender: senderId,
