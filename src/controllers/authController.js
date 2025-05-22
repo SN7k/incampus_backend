@@ -64,7 +64,27 @@ export const signup = async (req, res) => {
       console.error('Failed to send OTP email:', error);
       // Log the OTP for development purposes
       console.log('Development OTP:', otp);
-      // Don't return error to user, just log it
+      
+      // Return success response with OTP for development
+      if (process.env.NODE_ENV === 'development') {
+        return res.status(201).json({
+          status: 'success',
+          message: 'User created successfully. Development mode: OTP not sent via email.',
+          data: {
+            email: user.email,
+            otp: otp // Only include OTP in development mode
+          }
+        });
+      }
+      
+      // In production, don't expose the OTP
+      return res.status(201).json({
+        status: 'success',
+        message: 'User created successfully. Please try logging in again to receive a new OTP.',
+        data: {
+          email: user.email
+        }
+      });
     }
 
     res.status(201).json({

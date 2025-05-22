@@ -1,5 +1,11 @@
 import nodemailer from 'nodemailer';
 
+// Check if required environment variables are set
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+  console.error('Email configuration error: Missing required environment variables');
+  console.error('Please ensure EMAIL_USER and EMAIL_PASS are set in your .env file');
+}
+
 // Create a transporter with Gmail configuration
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -8,7 +14,7 @@ const transporter = nodemailer.createTransport({
   secure: true,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS.replace(/\s+/g, '') // Remove spaces from app password
+    pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : undefined // Remove spaces from app password
   },
   debug: true // Enable debug logging
 });
@@ -16,6 +22,9 @@ const transporter = nodemailer.createTransport({
 // Verify transporter configuration
 const verifyTransporter = async () => {
   try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      throw new Error('Email configuration is incomplete. Check your .env file.');
+    }
     await transporter.verify();
     console.log('Email transporter is configured correctly');
     return true;
