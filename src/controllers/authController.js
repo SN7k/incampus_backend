@@ -59,8 +59,11 @@ export const signup = async (req, res) => {
     // Send OTP via email
     try {
       await sendOTPEmail(email, otp);
+      console.log('OTP sent successfully to:', email);
     } catch (error) {
       console.error('Failed to send OTP email:', error);
+      // Log the OTP for development purposes
+      console.log('Development OTP:', otp);
       // Don't return error to user, just log it
     }
 
@@ -72,6 +75,7 @@ export const signup = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Signup error:', error);
     res.status(400).json({
       status: 'error',
       message: error.message
