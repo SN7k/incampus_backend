@@ -17,17 +17,21 @@ dotenv.config();
 // Create Express app
 const app = express();
 
-// Middleware
-app.use(cors({
-  origin: true, // Allow all origins in development
+// CORS configuration
+const corsOptions = {
+  origin: true, // Allow all origins since we're using the same domain
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
-}));
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
 
 // Add pre-flight OPTIONS handler
-app.options('*', cors());
+app.options('*', cors(corsOptions));
 
+// Middleware
 app.use(express.json());
 
 // Rate limiting
@@ -52,7 +56,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/friends', friendRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/users', userRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
