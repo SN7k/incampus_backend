@@ -91,22 +91,36 @@ export const login = async (req, res) => {
     return res.status(400).json({ status: 'error', errors: errors.array() });
   }
   try {
-    const { email, password } = req.body;
+    const { email, universityId, password, role } = req.body;
 
-    // Check if email and password exist
-    if (!email || !password) {
+    // Check if either email or universityId exists
+    if (!email && !universityId) {
       return res.status(400).json({
         status: 'error',
-        message: 'Please provide email and password'
+        message: 'Please provide either email or university ID'
       });
     }
 
-    // Check if user exists && password is correct
-    const user = await User.findOne({ email }).select('+password');
+    // Check if password exists
+    if (!password) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Please provide password'
+      });
+    }
+
+    // Find user by email or universityId
+    const user = await User.findOne({
+      $or: [
+        { email: email },
+        { universityId: universityId }
+      ]
+    }).select('+password');
+
     if (!user || !(await user.correctPassword(password, user.password))) {
       return res.status(401).json({
         status: 'error',
-        message: 'Incorrect email or password'
+        message: 'Incorrect credentials'
       });
     }
 
@@ -118,9 +132,18 @@ export const login = async (req, res) => {
       });
     }
 
+    // Check if user role matches
+    if (user.role !== role) {
+      return res.status(401).json({
+        status: 'error',
+        message: `Invalid role. Please login as ${user.role}`
+      });
+    }
+
     // If everything ok, send token to client
     createSendToken(user, 200, res);
   } catch (error) {
+    console.error('Login error:', error);
     res.status(400).json({
       status: 'error',
       message: error.message

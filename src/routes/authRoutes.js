@@ -17,8 +17,10 @@ router.post(
 router.post(
   '/login',
   [
-    body('email').isEmail().withMessage('Valid email required'),
-    body('password').notEmpty().withMessage('Password is required')
+    body('email').optional().isEmail().withMessage('Valid email required'),
+    body('universityId').optional().notEmpty().withMessage('University ID is required'),
+    body('password').notEmpty().withMessage('Password is required'),
+    body('role').isIn(['student', 'faculty']).withMessage('Role must be either student or faculty')
   ],
   login
 );
