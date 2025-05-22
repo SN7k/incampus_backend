@@ -88,13 +88,35 @@ userSchema.methods.generateOTP = function() {
 
 // Method to verify OTP
 userSchema.methods.verifyOTP = function(otp) {
+  console.log('Verifying OTP:', {
+    providedOTP: otp,
+    storedOTP: this.otp?.code,
+    expiresAt: this.otp?.expiresAt,
+    currentTime: new Date(),
+    isExpired: this.otp?.expiresAt ? Date.now() > this.otp.expiresAt : true
+  });
+
+  // Check if OTP exists
   if (!this.otp || !this.otp.code || !this.otp.expiresAt) {
+    console.log('No OTP found or OTP is incomplete');
     return false;
   }
+
+  // Check if OTP is expired
   if (Date.now() > this.otp.expiresAt) {
+    console.log('OTP has expired');
     return false;
   }
-  return this.otp.code === otp;
+
+  // Compare OTPs
+  const isValid = this.otp.code === otp;
+  console.log('OTP comparison result:', {
+    isValid,
+    providedOTP: otp,
+    storedOTP: this.otp.code
+  });
+
+  return isValid;
 };
 
 const User = mongoose.model('User', userSchema);

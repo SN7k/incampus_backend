@@ -129,6 +129,96 @@ export const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
+    console.log('Verifying OTP for:', { email, otp });
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Email and OTP are required'
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log('User not found:', email);
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
+
+    console.log('Found user:', {
+      email: user.email,
+      isVerified: user.isVerified,
+      hasOTP: !!user.otp,
+      otpExpiresAt: user.otp?.expiresAt
+    });
+
+    if (user.isVerified) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'User is already verified'
+      });
+    }
+
+    if (!user.otp || !user.otp.code) {
+      console.log('No OTP found for user:', email);
+      return res.status(400).json({
+        status: 'error',
+        message: 'No OTP found. Please request a new OTP'
+      });
+    }
+
+    if (Date.now() > user.otp.expiresAt) {
+      console.log('OTP expired for user:', email);
+      return res.status(400).json({
+        status: 'error',
+        message: 'OTP has expired. Please request a new OTP'
+      });
+    }
+
+    const isValid = user.verifyOTP(otp);
+    console.log('OTP verification result:', {
+      email,
+      providedOTP: otp,
+      storedOTP: user.otp.code,
+      isValid
+    });
+
+    if (!isValid) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid OTP'
+      });
+    }
+
+    user.isVerified = true;
+    user.otp = undefined;
+    await user.save();
+
+    console.log('User verified successfully:', email);
+    createSendToken(user, 200, res);
+  } catch (error) {
+    console.error('Error in verifyOTP:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'An error occurred while verifying OTP'
+    });
+  }
+};
+
+// Resend OTP
+export const resendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Email is required'
+      });
+    }
+
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({
@@ -144,22 +234,29 @@ export const verifyOTP = async (req, res) => {
       });
     }
 
-    if (!user.verifyOTP(otp)) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Invalid or expired OTP'
-      });
-    }
-
-    user.isVerified = true;
-    user.otp = undefined;
+    // Generate new OTP
+    const otp = user.generateOTP();
     await user.save();
 
-    createSendToken(user, 200, res);
+    // Send new OTP via email
+    try {
+      await sendOTPEmail(email, otp);
+      res.status(200).json({
+        status: 'success',
+        message: 'New OTP sent successfully. Please check your email.'
+      });
+    } catch (error) {
+      console.error('Failed to send OTP email:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to send OTP email. Please try again.'
+      });
+    }
   } catch (error) {
-    res.status(400).json({
+    console.error('Error in resendOTP:', error);
+    res.status(500).json({
       status: 'error',
-      message: error.message
+      message: 'An error occurred while resending OTP'
     });
   }
 }; 
