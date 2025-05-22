@@ -76,7 +76,8 @@ userSchema.methods.correctPassword = async function(candidatePassword, userPassw
 
 // Method to generate OTP
 userSchema.methods.generateOTP = function() {
-  const otp = '123456'; // For testing purposes
+  // Generate a random 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
   this.otp = {
     code: otp,

@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { validationResult } from 'express-validator';
+import { sendOTPEmail } from '../services/emailService.js';
 
 // Generate JWT token
 const signToken = (id) => {
@@ -55,12 +56,17 @@ export const signup = async (req, res) => {
     const otp = user.generateOTP();
     await user.save();
 
-    // In a real application, send OTP via email here
-    console.log('OTP for testing:', otp);
+    // Send OTP via email
+    try {
+      await sendOTPEmail(email, otp);
+    } catch (error) {
+      console.error('Failed to send OTP email:', error);
+      // Don't return error to user, just log it
+    }
 
     res.status(201).json({
       status: 'success',
-      message: 'User created successfully. Please verify your email.',
+      message: 'User created successfully. Please check your email for the verification code.',
       data: {
         email: user.email
       }
