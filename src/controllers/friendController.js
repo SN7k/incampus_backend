@@ -240,4 +240,74 @@ export const getPendingRequests = async (req, res) => {
       message: error.message
     });
   }
+};
+
+// Get friend suggestions
+export const getSuggestions = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Get user's friends
+    const friendships = await Friend.find({
+      $or: [
+        { sender: userId },
+        { receiver: userId }
+      ],
+      status: 'accepted'
+    });
+
+    // Get IDs of friends and pending requests
+    const friendIds = friendships.map(f => 
+      f.sender.toString() === userId.toString() ? f.receiver : f.sender
+    );
+
+    const pendingRequests = await Friend.find({
+      $or: [
+        { sender: userId },
+        { receiver: userId }
+      ],
+      status: 'pending'
+    });
+
+    const pendingIds = pendingRequests.map(f => 
+      f.sender.toString() === userId.toString() ? f.receiver : f.sender
+    );
+
+    // Get users who are not friends and don't have pending requests
+    const suggestions = await User.find({
+      _id: { 
+        $nin: [...friendIds, ...pendingIds, userId]
+      }
+    }).select('name email avatar role collegeId department batch');
+
+    // Add relevance information
+    const suggestionsWithRelevance = suggestions.map(user => {
+      const relevance = [];
+      
+      // Add department/program relevance
+      if (user.department || user.batch) {
+        relevance.push(user.department || user.batch);
+      }
+
+      // Add role relevance
+      if (user.role) {
+        relevance.push(user.role);
+      }
+
+      return {
+        ...user.toObject(),
+        relevance
+      };
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: suggestionsWithRelevance
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'error',
+      message: error.message
+    });
+  }
 }; 
