@@ -201,13 +201,6 @@ export const verifyOTP = async (req, res) => {
       otpExpiresAt: user.otp?.expiresAt
     });
 
-    if (user.isVerified) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'User is already verified'
-      });
-    }
-
     if (!user.otp || !user.otp.code) {
       console.log('No OTP found for user:', email);
       return res.status(400).json({
