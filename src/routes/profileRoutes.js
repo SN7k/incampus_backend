@@ -1,7 +1,8 @@
 import express from 'express';
-import { getProfile, updateProfile, uploadAvatar } from '../controllers/profileController.js';
+import { getProfile, updateProfile, uploadAvatar, setupProfile } from '../controllers/profileController.js';
 import { protect } from '../middleware/auth.js';
 import upload from '../middleware/upload.js';
+import { body } from 'express-validator';
 
 const router = express.Router();
 
@@ -12,5 +13,18 @@ router.use(protect);
 router.get('/', getProfile);
 router.patch('/', updateProfile);
 router.post('/avatar', upload.single('avatar'), uploadAvatar);
+
+// Profile setup route
+router.post(
+  '/setup',
+  [
+    body('name').notEmpty().withMessage('Name is required'),
+    body('role').isIn(['student', 'faculty']).withMessage('Role must be either student or faculty'),
+    body('avatar').optional().isString(),
+    body('coverPhoto').optional().isString(),
+    body('bio').optional().isString()
+  ],
+  setupProfile
+);
 
 export default router; 
