@@ -9,6 +9,7 @@ import postRoutes from './routes/postRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 import rateLimit from 'express-rate-limit';
+import userRoutes from './routes/userRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -18,17 +19,29 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://incampus-frontend.onrender.com']
+    : ['http://localhost:5173'],
   credentials: true
 }));
 app.use(express.json());
 
 // Routes
+app.get('/', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'Welcome to Incampus API',
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/friends', friendRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/user', userRoutes);
 
 // Rate limiting middleware (100 requests per 15 minutes per IP)
 const apiLimiter = rateLimit({
@@ -48,8 +61,8 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 });
 
 // Error handler (should be last)
