@@ -5,12 +5,16 @@ let transporter;
 
 try {
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    // More detailed Gmail SMTP configuration
     transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // use SSL
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-      }
+      },
+      debug: true // Enable verbose logging
     });
   } else {
     console.warn('Email credentials not found in environment variables. Using test account.');
@@ -58,15 +62,40 @@ export const sendOTPEmail = async (email, otp) => {
       throw new Error('Email service not configured');
     }
     
+    console.log(`Attempting to send email to ${email} with transporter config:`, {
+      host: transporter.options.host,
+      port: transporter.options.port,
+      secure: transporter.options.secure,
+      auth: {
+        user: transporter.options.auth.user,
+        // Not logging password for security reasons
+        passLength: transporter.options.auth.pass ? transporter.options.auth.pass.length : 0
+      }
+    });
+    
     const info = await transporter.sendMail(mailOptions);
-    console.log('OTP email sent successfully');
+    console.log('OTP email sent successfully with info:', {
+      messageId: info.messageId,
+      response: info.response,
+      accepted: info.accepted,
+      rejected: info.rejected
+    });
     
     // If using ethereal email (test account), log the URL to view the email
     if (info.messageId && info.testMessageUrl) {
       console.log('Preview URL: %s', info.testMessageUrl);
     }
+    
+    return info;
   } catch (error) {
     console.error('Error sending OTP email:', error);
-    throw new Error('Failed to send OTP email');
+    console.error('Error details:', {
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      responseCode: error.responseCode,
+      stack: error.stack
+    });
+    throw new Error(`Failed to send OTP email: ${error.message}`);
   }
 };
