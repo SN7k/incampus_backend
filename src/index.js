@@ -17,6 +17,9 @@ dotenv.config();
 // Create Express app
 const app = express();
 
+// Trust proxy - Add this line to fix the X-Forwarded-For header issue
+app.set('trust proxy', 1);
+
 // CORS configuration
 const corsOptions = {
   origin: true, // Allow all origins since we're using the same domain
