@@ -143,9 +143,88 @@ npm run dev
 npm start
 ```
 
+## Environment Configuration
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Server Configuration
+NODE_ENV=development
+PORT=5000
+API_URL=http://localhost:5000
+FRONTEND_URL=http://localhost:5173
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/incampus
+
+# JWT
+JWT_SECRET=your_jwt_secret_key_here
+JWT_EXPIRES_IN=7d
+
+# Email Configuration
+EMAIL_SERVICE=gmail
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_email_app_password
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000  # 15 minutes
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Security
+CORS_ORIGIN=http://localhost:5173
+TRUST_PROXY=1
+
+# Logging
+LOG_LEVEL=debug
+```
+
 ## API Documentation
 
-For detailed API documentation, see the [API Documentation](https://documenter.getpostman.com/view/12345678/incampus-api/abcdefg).
+The API documentation is available at `/api-docs` when the server is running. It provides:
+- Detailed endpoint descriptions
+- Request/response schemas
+- Authentication requirements
+- Example requests and responses
+
+## Real-time Features
+
+The backend supports real-time features using Socket.IO:
+- Friend requests
+- Post likes
+- Comments
+- Notifications
+
+To connect from the frontend:
+
+```javascript
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:5000', {
+  auth: {
+    token: 'your_jwt_token'
+  }
+});
+
+// Listen for friend requests
+socket.on('friend:request', (data) => {
+  console.log('Friend request from:', data.fromUser);
+});
+
+// Listen for post likes
+socket.on('post:like', (data) => {
+  console.log('Post liked by:', data.fromUser);
+});
+
+// Listen for comments
+socket.on('post:comment', (data) => {
+  console.log('New comment from:', data.fromUser);
+});
+```
 
 ## License
 

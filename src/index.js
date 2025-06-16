@@ -1,8 +1,12 @@
 import express from 'express';
+import { createServer } from 'http';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import swaggerUi from 'swagger-ui-express';
+import { specs } from './config/swagger.js';
+import { initializeSocket } from './services/socketService.js';
 import authRoutes from './routes/authRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import postRoutes from './routes/postRoutes.js';
@@ -16,13 +20,17 @@ dotenv.config();
 
 // Create Express app
 const app = express();
+const httpServer = createServer(app);
+
+// Initialize Socket.IO
+initializeSocket(httpServer);
 
 // Trust proxy - Add this line to fix the X-Forwarded-For header issue
 app.set('trust proxy', 1);
 
 // CORS configuration
 const corsOptions = {
-  origin: true, // Allow all origins since we're using the same domain
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173', // Update with your frontend URL
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
@@ -36,6 +44,13 @@ app.options('*', cors(corsOptions));
 
 // Middleware
 app.use(express.json());
+
+// API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "InCampus API Documentation"
+}));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -71,6 +86,7 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
 }); 
