@@ -34,7 +34,7 @@ export const signup = async (req, res) => {
     return res.status(400).json({ status: 'error', errors: errors.array() });
   }
   try {
-    const { email, password, collegeId } = req.body;
+    const { email, password, collegeId, name, role } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -49,7 +49,9 @@ export const signup = async (req, res) => {
     const user = await User.create({
       email,
       password,
-      collegeId
+      universityId: collegeId,
+      name,
+      role
     });
 
     // Generate OTP
