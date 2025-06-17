@@ -49,7 +49,8 @@ const userSchema = new mongoose.Schema({
     publicId: String
   },
   coverPhoto: {
-    type: String,
+    url: String,
+    publicId: String
   },
   education: {
     degree: String,

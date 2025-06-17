@@ -54,42 +54,20 @@ export const setupProfile = async (req, res) => {
     };
 
     // Handle avatar if provided
-    if (avatar) {
-      // Upload avatar to Cloudinary
-      const result = await cloudinary.uploader.upload(avatar, {
-        folder: 'incampus/avatars',
-        width: 300,
-        crop: 'scale'
-      });
-
-      // Delete old avatar if exists
-      if (user.avatar && user.avatar.publicId) {
-        await cloudinary.uploader.destroy(user.avatar.publicId);
-      }
-
+    if (avatar && avatar.url) {
+      // Avatar is already uploaded, just save the URL
       updateData.avatar = {
-        url: result.secure_url,
-        publicId: result.public_id
+        url: avatar.url,
+        publicId: avatar.publicId || undefined
       };
     }
 
     // Handle cover photo if provided
-    if (coverPhoto) {
-      // Upload cover photo to Cloudinary
-      const result = await cloudinary.uploader.upload(coverPhoto, {
-        folder: 'incampus/covers',
-        width: 1200,
-        crop: 'scale'
-      });
-
-      // Delete old cover photo if exists
-      if (user.coverPhoto && user.coverPhoto.publicId) {
-        await cloudinary.uploader.destroy(user.coverPhoto.publicId);
-      }
-
+    if (coverPhoto && coverPhoto.url) {
+      // Cover photo is already uploaded, just save the URL
       updateData.coverPhoto = {
-        url: result.secure_url,
-        publicId: result.public_id
+        url: coverPhoto.url,
+        publicId: coverPhoto.publicId || undefined
       };
     }
 
@@ -151,8 +129,8 @@ export const updateProfile = async (req, res) => {
       updateData.avatar = avatar;
     }
 
-    // Handle cover photo if provided (string URL)
-    if (coverPhoto && typeof coverPhoto === 'string') {
+    // Handle cover photo if provided (object with url and publicId)
+    if (coverPhoto && typeof coverPhoto === 'object' && coverPhoto.url) {
       updateData.coverPhoto = coverPhoto;
     }
 
@@ -217,6 +195,54 @@ export const uploadAvatar = async (req, res) => {
       status: 'success',
       data: {
         avatar: user.avatar
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
+// Upload cover photo
+export const uploadCoverPhoto = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Please upload an image file'
+      });
+    }
+
+    // Convert buffer to base64
+    const b64 = Buffer.from(req.file.buffer).toString('base64');
+    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: 'incampus/covers',
+      width: 1200,
+      crop: 'scale'
+    });
+
+    // Delete old cover photo from Cloudinary if exists
+    const user = await User.findById(req.user._id);
+    if (user.coverPhoto && user.coverPhoto.publicId) {
+      await cloudinary.uploader.destroy(user.coverPhoto.publicId);
+    }
+
+    // Update user cover photo in database
+    user.coverPhoto = {
+      url: result.secure_url,
+      publicId: result.public_id
+    };
+    await user.save();
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        coverPhoto: user.coverPhoto
       }
     });
   } catch (error) {
