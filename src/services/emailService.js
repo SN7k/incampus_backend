@@ -42,13 +42,13 @@ let transporter;
 let emailProvider = 'none';
 
 if (process.env.SENDGRID_API_KEY) {
-  transporter = nodemailer.createTransporter(emailConfig.sendgrid);
+  transporter = nodemailer.createTransport(emailConfig.sendgrid);
   emailProvider = 'sendgrid';
 } else if (process.env.MAILGUN_USER && process.env.MAILGUN_PASS) {
-  transporter = nodemailer.createTransporter(emailConfig.mailgun);
+  transporter = nodemailer.createTransport(emailConfig.mailgun);
   emailProvider = 'mailgun';
 } else if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  transporter = nodemailer.createTransporter(emailConfig.gmail);
+  transporter = nodemailer.createTransport(emailConfig.gmail);
   emailProvider = 'gmail';
 } else {
   console.error('No email service configured. Please set up one of the following:');
