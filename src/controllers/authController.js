@@ -51,14 +51,15 @@ export const signup = async (req, res) => {
       password,
       universityId: collegeId,
       name,
-      role
+      role,
+      isVerified: true
     });
 
     // Generate OTP
     const otp = user.generateOTP();
     await user.save();
 
-    // Send OTP via email
+    // Try to send OTP via email, but don't fail if email service is not configured
     try {
       await sendOTPEmail(email, otp);
       console.log('OTP sent successfully to:', email);
@@ -67,33 +68,26 @@ export const signup = async (req, res) => {
       // Log the OTP for development purposes
       console.log('Development OTP:', otp);
       
-      // Return success response with OTP for development
-      if (process.env.NODE_ENV === 'development') {
-        return res.status(201).json({
-          status: 'success',
-          message: 'User created successfully. Development mode: OTP not sent via email.',
-          data: {
-            email: user.email,
-            otp: otp // Only include OTP in development mode
-          }
-        });
-      }
-      
-      // In production, don't expose the OTP
-      return res.status(201).json({
-        status: 'success',
-        message: 'User created successfully. Please try logging in again to receive a new OTP.',
-        data: {
-          email: user.email
-        }
-      });
+      // Don't fail the signup - just log the OTP
+      console.log('User created successfully. OTP for verification:', otp);
     }
 
+    // Return success response with user data and token
+    const token = signToken(user._id);
+    
     res.status(201).json({
       status: 'success',
-      message: 'User created successfully. Please check your email for the verification code.',
+      message: 'User created successfully.',
       data: {
-        email: user.email
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          universityId: user.universityId,
+          role: user.role,
+          isVerified: user.isVerified
+        }
       }
     });
   } catch (error) {
