@@ -87,7 +87,8 @@ export const signup = async (req, res) => {
           universityId: user.universityId,
           role: user.role,
           isVerified: user.isVerified
-        }
+        },
+        otp: otp // Include OTP in response for manual entry
       }
     });
   } catch (error) {
