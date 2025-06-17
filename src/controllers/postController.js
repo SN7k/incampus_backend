@@ -54,8 +54,8 @@ export const createPost = async (req, res) => {
       images
     });
 
-    // Populate author details
-    await post.populate('author', 'name avatar universityId');
+    // Populate author details with all necessary fields
+    await post.populate('author', 'name avatar universityId role bio');
 
     res.status(201).json({
       status: 'success',
@@ -98,7 +98,7 @@ export const getFeed = async (req, res) => {
     const posts = await Post.find({
       author: { $in: friendIds }
     })
-    .populate('author', 'name avatar')
+    .populate('author', 'name avatar universityId role bio')
     .populate('comments.user', 'name avatar')
     .sort('-createdAt')
     .limit(20);
@@ -298,7 +298,7 @@ export const deletePost = async (req, res) => {
 export const getUserPosts = async (req, res) => {
   try {
     const { userId } = req.params;
-    const posts = await Post.find({ author: userId }).populate('author', 'name avatar');
+    const posts = await Post.find({ author: userId }).populate('author', 'name avatar universityId role bio');
     res.status(200).json({ status: 'success', data: { posts } });
   } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });
