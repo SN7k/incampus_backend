@@ -17,11 +17,24 @@ const createSendToken = (user, statusCode, res) => {
   // Remove password from output
   user.password = undefined;
   
+  // Map user data to frontend format
+  const userData = {
+    id: user._id,
+    email: user.email,
+    name: user.name,
+    universityId: user.universityId,
+    role: user.role,
+    avatar: user.avatar?.url || user.avatar || '',
+    bio: user.bio,
+    coverPhoto: user.coverPhoto,
+    isVerified: user.isVerified
+  };
+  
   res.status(statusCode).json({
     status: 'success',
     data: {
       token,
-      user
+      user: userData
     }
   });
 };
