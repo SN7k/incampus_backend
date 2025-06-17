@@ -124,8 +124,8 @@ export const updateProfile = async (req, res) => {
     if (achievements !== undefined) updateData.achievements = achievements;
     if (interests !== undefined) updateData.interests = interests;
 
-    // Handle avatar if provided (string URL)
-    if (avatar && typeof avatar === 'string') {
+    // Handle avatar if provided (object with url and publicId)
+    if (avatar && typeof avatar === 'object' && avatar.url) {
       updateData.avatar = avatar;
     }
 

@@ -24,9 +24,9 @@ const createSendToken = (user, statusCode, res) => {
     name: user.name,
     universityId: user.universityId,
     role: user.role,
-    avatar: user.avatar?.url || user.avatar || '',
+    avatar: user.avatar || { url: '' },
     bio: user.bio,
-    coverPhoto: user.coverPhoto,
+    coverPhoto: user.coverPhoto || { url: '' },
     isVerified: user.isVerified
   };
   
@@ -129,6 +129,9 @@ export const signup = async (req, res) => {
           name: user.name,
           universityId: user.universityId,
           role: user.role,
+          avatar: user.avatar || { url: '' },
+          bio: user.bio,
+          coverPhoto: user.coverPhoto || { url: '' },
           isVerified: user.isVerified
         }
       }
