@@ -32,7 +32,7 @@ app.set('trust proxy', 1);
 const allowedOrigins = [
   'http://localhost:5173',
   'https://incampusbwu.netlify.app',
-  'https://bwuinsta.netlify.app'
+  'https://inkampus.netlify.app/'
 ];
 
 const corsOptions = {
