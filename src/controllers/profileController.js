@@ -5,7 +5,7 @@ import { validationResult } from 'express-validator';
 // Get user profile
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id).select('-password -otp');
     if (!user) {
       return res.status(404).json({
         status: 'error',
@@ -15,9 +15,7 @@ export const getProfile = async (req, res) => {
 
     res.status(200).json({
       status: 'success',
-      data: {
-        user
-      }
+      data: user
     });
   } catch (error) {
     res.status(400).json({
@@ -104,9 +102,7 @@ export const setupProfile = async (req, res) => {
 
     res.status(200).json({
       status: 'success',
-      data: {
-        user: updatedUser
-      }
+      data: updatedUser
     });
   } catch (error) {
     console.error('Profile setup error:', error);
@@ -172,9 +168,7 @@ export const updateProfile = async (req, res) => {
 
     res.status(200).json({
       status: 'success',
-      data: {
-        user
-      }
+      data: user
     });
   } catch (error) {
     console.error('Profile update error:', error);
@@ -236,8 +230,8 @@ export const uploadAvatar = async (req, res) => {
 // Get my profile
 export const getMyProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    res.status(200).json({ status: 'success', data: { profile: user } });
+    const user = await User.findById(req.user.id).select('-password -otp');
+    res.status(200).json({ status: 'success', data: user });
   } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });
   }
@@ -247,8 +241,11 @@ export const getMyProfile = async (req, res) => {
 export const getUserProfile = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId);
-    res.status(200).json({ status: 'success', data: { profile: user } });
+    const user = await User.findById(userId).select('-password -otp');
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+    res.status(200).json({ status: 'success', data: user });
   } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });
   }
