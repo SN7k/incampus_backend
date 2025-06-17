@@ -120,21 +120,55 @@ export const setupProfile = async (req, res) => {
 // Update user profile
 export const updateProfile = async (req, res) => {
   try {
-    const { name, bio, course, batch, role } = req.body;
+    const { 
+      name, 
+      bio, 
+      course, 
+      batch, 
+      role, 
+      universityId, 
+      avatar, 
+      coverPhoto,
+      education,
+      location,
+      skills,
+      achievements,
+      interests
+    } = req.body;
 
     // Create update object with only provided fields
     const updateData = {};
-    if (name) updateData.name = name;
-    if (bio) updateData.bio = bio;
-    if (course) updateData.course = course;
-    if (batch) updateData.batch = batch;
-    if (role) updateData.role = role;
+    if (name !== undefined) updateData.name = name;
+    if (bio !== undefined) updateData.bio = bio;
+    if (course !== undefined) updateData.course = course;
+    if (batch !== undefined) updateData.batch = batch;
+    if (role !== undefined) updateData.role = role;
+    if (universityId !== undefined) updateData.universityId = universityId;
+    if (education !== undefined) updateData.education = education;
+    if (location !== undefined) updateData.location = location;
+    if (skills !== undefined) updateData.skills = skills;
+    if (achievements !== undefined) updateData.achievements = achievements;
+    if (interests !== undefined) updateData.interests = interests;
+
+    // Handle avatar if provided (string URL)
+    if (avatar && typeof avatar === 'string') {
+      updateData.avatar = avatar;
+    }
+
+    // Handle cover photo if provided (string URL)
+    if (coverPhoto && typeof coverPhoto === 'string') {
+      updateData.coverPhoto = coverPhoto;
+    }
+
+    console.log('Updating profile with data:', updateData);
 
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { $set: updateData },
       { new: true, runValidators: true }
-    );
+    ).select('-password -otp');
+
+    console.log('Profile updated successfully:', user);
 
     res.status(200).json({
       status: 'success',
@@ -143,6 +177,7 @@ export const updateProfile = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Profile update error:', error);
     res.status(400).json({
       status: 'error',
       message: error.message
