@@ -29,3 +29,6 @@ Write-Host "Pushing to GitHub..."
 git push -u origin master
 
 Write-Host "Done! Backend code has been pushed to GitHub."
+
+# Notify about live deployment
+Write-Host "Backend is live at https://incampus-backend.onrender.com"
