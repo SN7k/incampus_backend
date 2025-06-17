@@ -50,7 +50,7 @@ export const createPost = async (req, res) => {
 
     const post = await Post.create({
       author,
-      text,
+      content: text,
       images
     });
 
