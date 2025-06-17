@@ -1,35 +1,73 @@
 import nodemailer from 'nodemailer';
 
-// Check if required environment variables are set
-if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-  console.error('Email configuration error: Missing required environment variables');
-  console.error('Please ensure EMAIL_USER and EMAIL_PASS are set in your .env file');
-}
-
-// Create a transporter with Gmail configuration
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : undefined // Remove spaces from app password
+// Email service configuration
+const emailConfig = {
+  // Option 1: Gmail (requires App Password)
+  gmail: {
+    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
   },
-  debug: true // Enable debug logging
-});
+  
+  // Option 2: SendGrid (more reliable for production)
+  sendgrid: {
+    host: 'smtp.sendgrid.net',
+    port: 587,
+    secure: false,
+    auth: {
+      user: 'apikey',
+      pass: process.env.SENDGRID_API_KEY
+    }
+  },
+  
+  // Option 3: Mailgun
+  mailgun: {
+    host: 'smtp.mailgun.org',
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.MAILGUN_USER,
+      pass: process.env.MAILGUN_PASS
+    }
+  }
+};
+
+// Choose email provider based on environment variables
+let transporter;
+let emailProvider = 'none';
+
+if (process.env.SENDGRID_API_KEY) {
+  transporter = nodemailer.createTransporter(emailConfig.sendgrid);
+  emailProvider = 'sendgrid';
+} else if (process.env.MAILGUN_USER && process.env.MAILGUN_PASS) {
+  transporter = nodemailer.createTransporter(emailConfig.mailgun);
+  emailProvider = 'mailgun';
+} else if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter = nodemailer.createTransporter(emailConfig.gmail);
+  emailProvider = 'gmail';
+} else {
+  console.error('No email service configured. Please set up one of the following:');
+  console.error('- Gmail: EMAIL_USER and EMAIL_PASS');
+  console.error('- SendGrid: SENDGRID_API_KEY');
+  console.error('- Mailgun: MAILGUN_USER and MAILGUN_PASS');
+}
 
 // Verify transporter configuration
 const verifyTransporter = async () => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      throw new Error('Email configuration is incomplete. Check your .env file.');
+    if (!transporter) {
+      throw new Error('No email service configured');
     }
     await transporter.verify();
-    console.log('Email transporter is configured correctly');
+    console.log(`Email transporter (${emailProvider}) is configured correctly`);
     return true;
   } catch (error) {
-    console.error('Email transporter configuration error:', error);
+    console.error(`Email transporter (${emailProvider}) configuration error:`, error);
     return false;
   }
 };
@@ -43,7 +81,7 @@ export const sendOTPEmail = async (email, otp) => {
   }
 
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: process.env.EMAIL_USER || process.env.MAILGUN_USER || 'noreply@incampus.com',
     to: email,
     subject: 'Your InCampus Verification Code',
     html: `
@@ -65,14 +103,16 @@ export const sendOTPEmail = async (email, otp) => {
     const info = await transporter.sendMail(mailOptions);
     console.log('OTP email sent successfully:', {
       messageId: info.messageId,
-      to: email
+      to: email,
+      provider: emailProvider
     });
     return info;
   } catch (error) {
     console.error('Error sending OTP email:', {
       error: error.message,
       code: error.code,
-      command: error.command
+      command: error.command,
+      provider: emailProvider
     });
     throw new Error('Failed to send OTP email');
   }
