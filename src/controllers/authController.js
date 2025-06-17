@@ -36,6 +36,15 @@ export const signup = async (req, res) => {
   try {
     const { email, password, collegeId, name, role } = req.body;
 
+    // Debug logging
+    console.log('Signup request data:', {
+      email,
+      collegeId,
+      name,
+      role,
+      hasPassword: !!password
+    });
+
     // Additional validation for collegeId
     if (!collegeId || collegeId.trim() === '') {
       return res.status(400).json({
@@ -63,14 +72,18 @@ export const signup = async (req, res) => {
     }
 
     // Create new user
-    const user = await User.create({
+    const userData = {
       email,
       password,
       universityId: collegeId,
       name,
       role,
       isVerified: true
-    });
+    };
+    
+    console.log('Creating user with data:', userData);
+    
+    const user = await User.create(userData);
 
     // Generate OTP
     const otp = user.generateOTP();
