@@ -292,4 +292,15 @@ export const deletePost = async (req, res) => {
       message: error.message
     });
   }
-}; 
+};
+
+// Get posts by a specific user
+export const getUserPosts = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const posts = await Post.find({ author: userId }).populate('author', 'name avatar');
+    res.status(200).json({ status: 'success', data: { posts } });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+};

@@ -5,7 +5,8 @@ import {
   toggleLike,
   addComment,
   getComments,
-  deletePost
+  deletePost,
+  getUserPosts
 } from '../controllers/postController.js';
 import { protect } from '../middleware/auth.js';
 import upload from '../middleware/upload.js';
@@ -51,5 +52,8 @@ router.get('/:postId/comments', getComments);
 
 // Delete a post
 router.delete('/:postId', deletePost);
+
+// Get posts for a specific user
+router.get('/user/:userId', getUserPosts);
 
 export default router;

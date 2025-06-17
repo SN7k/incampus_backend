@@ -1,5 +1,5 @@
 import express from 'express';
-import { getProfile, updateProfile, uploadAvatar, setupProfile } from '../controllers/profileController.js';
+import { getProfile, updateProfile, uploadAvatar, setupProfile, getMyProfile, getUserProfile } from '../controllers/profileController.js';
 import { protect } from '../middleware/auth.js';
 import upload from '../middleware/upload.js';
 import { body } from 'express-validator';
@@ -13,6 +13,8 @@ router.use(protect);
 router.get('/', getProfile);
 router.patch('/', updateProfile);
 router.post('/avatar', upload.single('avatar'), uploadAvatar);
+router.get('/me', getMyProfile);
+router.get('/:userId', getUserProfile);
 
 // Profile setup route
 router.post(
@@ -27,4 +29,4 @@ router.post(
   setupProfile
 );
 
-export default router; 
+export default router;

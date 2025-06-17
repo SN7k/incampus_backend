@@ -16,9 +16,9 @@ const userSchema = new mongoose.Schema({
     minlength: 8,
     select: false
   },
-  collegeId: {
+  universityId: {
     type: String,
-    required: [true, 'Please provide your college ID'],
+    required: [true, 'Please provide your university ID'],
     unique: true
   },
   // Profile fields
@@ -48,6 +48,29 @@ const userSchema = new mongoose.Schema({
     url: String,
     publicId: String
   },
+  coverPhoto: {
+    type: String,
+  },
+  education: {
+    degree: String,
+    institution: String,
+    years: String
+  },
+  location: {
+    type: String,
+  },
+  skills: [{
+    name: String,
+    proficiency: Number
+  }],
+  achievements: [{
+    title: String,
+    description: String,
+    year: String
+  }],
+  interests: [{
+    type: String
+  }],
   isVerified: {
     type: Boolean,
     default: false
@@ -121,4 +144,4 @@ userSchema.methods.verifyOTP = function(otp) {
 
 const User = mongoose.model('User', userSchema);
 
-export default User; 
+export default User;

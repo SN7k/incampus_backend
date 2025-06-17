@@ -24,9 +24,9 @@ const postSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  text: {
+  content: {
     type: String,
-    required: [true, 'Post text is required'],
+    required: [true, 'Post content is required'],
     trim: true,
     maxlength: [2000, 'Post cannot be more than 2000 characters']
   },
@@ -70,4 +70,4 @@ postSchema.index({ author: 1, createdAt: -1 });
 
 const Post = mongoose.model('Post', postSchema);
 
-export default Post; 
+export default Post;

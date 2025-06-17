@@ -196,4 +196,25 @@ export const uploadAvatar = async (req, res) => {
       message: error.message
     });
   }
-}; 
+};
+
+// Get my profile
+export const getMyProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    res.status(200).json({ status: 'success', data: { profile: user } });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+};
+
+// Get user profile by ID
+export const getUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    res.status(200).json({ status: 'success', data: { profile: user } });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+};
