@@ -36,12 +36,29 @@ export const signup = async (req, res) => {
   try {
     const { email, password, collegeId, name, role } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    // Additional validation for collegeId
+    if (!collegeId || collegeId.trim() === '') {
       return res.status(400).json({
         status: 'error',
-        message: 'User already exists'
+        message: 'College ID is required and cannot be empty'
+      });
+    }
+
+    // Check if user already exists by email
+    const existingUserByEmail = await User.findOne({ email });
+    if (existingUserByEmail) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'User with this email already exists'
+      });
+    }
+
+    // Check if user already exists by universityId
+    const existingUserById = await User.findOne({ universityId: collegeId });
+    if (existingUserById) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'User with this University ID already exists'
       });
     }
 
@@ -93,6 +110,30 @@ export const signup = async (req, res) => {
     });
   } catch (error) {
     console.error('Signup error:', error);
+    
+    // Handle specific MongoDB duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      const value = error.keyValue[field];
+      
+      if (field === 'email') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'User with this email already exists'
+        });
+      } else if (field === 'universityId') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'User with this University ID already exists'
+        });
+      } else {
+        return res.status(400).json({
+          status: 'error',
+          message: `Duplicate ${field} value: ${value}`
+        });
+      }
+    }
+    
     res.status(400).json({
       status: 'error',
       message: error.message
