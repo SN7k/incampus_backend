@@ -246,6 +246,7 @@ export const getPendingRequests = async (req, res) => {
 export const getSuggestions = async (req, res) => {
   try {
     const userId = req.user._id;
+    console.log('getSuggestions - userId:', userId);
 
     // Get user's friends
     const friendships = await Friend.find({
@@ -273,20 +274,25 @@ export const getSuggestions = async (req, res) => {
       f.sender.toString() === userId.toString() ? f.receiver : f.sender
     );
 
+    console.log('getSuggestions - friendIds:', friendIds);
+    console.log('getSuggestions - pendingIds:', pendingIds);
+
     // Get users who are not friends and don't have pending requests
     const suggestions = await User.find({
       _id: { 
         $nin: [...friendIds, ...pendingIds, userId]
       }
-    }).select('name email avatar role collegeId department batch');
+    }).select('name email avatar role universityId course batch');
+
+    console.log('getSuggestions - raw suggestions:', suggestions);
 
     // Add relevance information
     const suggestionsWithRelevance = suggestions.map(user => {
       const relevance = [];
       
-      // Add department/program relevance
-      if (user.department || user.batch) {
-        relevance.push(user.department || user.batch);
+      // Add course/batch relevance
+      if (user.course || user.batch) {
+        relevance.push(user.course || user.batch);
       }
 
       // Add role relevance
@@ -300,11 +306,14 @@ export const getSuggestions = async (req, res) => {
       };
     });
 
+    console.log('getSuggestions - final suggestions:', suggestionsWithRelevance);
+
     res.status(200).json({
       status: 'success',
       data: suggestionsWithRelevance
     });
   } catch (error) {
+    console.error('getSuggestions - error:', error);
     res.status(400).json({
       status: 'error',
       message: error.message

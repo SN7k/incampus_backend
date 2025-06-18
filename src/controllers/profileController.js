@@ -267,12 +267,21 @@ export const getMyProfile = async (req, res) => {
 export const getUserProfile = async (req, res) => {
   try {
     const { userId } = req.params;
+    console.log('getUserProfile - requested userId:', userId);
+    console.log('getUserProfile - userId type:', typeof userId);
+    
     const user = await User.findById(userId).select('-password -otp');
+    console.log('getUserProfile - found user:', user);
+    
     if (!user) {
+      console.log('getUserProfile - user not found for ID:', userId);
       return res.status(404).json({ status: 'error', message: 'User not found' });
     }
+    
+    console.log('getUserProfile - returning user data:', user);
     res.status(200).json({ status: 'success', data: user });
   } catch (error) {
+    console.error('getUserProfile - error:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 };
