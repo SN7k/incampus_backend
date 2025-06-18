@@ -63,6 +63,15 @@ export const sendRequest = async (req, res) => {
     // Emit real-time notification via socket
     try {
       const io = getIO();
+      console.log('sendRequest - Emitting socket event to receiver:', receiverId);
+      console.log('sendRequest - Socket event data:', {
+        fromUser: {
+          id: senderId,
+          name: req.user.name,
+          avatar: req.user.avatar
+        }
+      });
+      
       io.to(receiverId.toString()).emit('friend:request', {
         fromUser: {
           id: senderId,
@@ -70,7 +79,7 @@ export const sendRequest = async (req, res) => {
           avatar: req.user.avatar
         }
       });
-      console.log('sendRequest - socket event emitted to receiver:', receiverId);
+      console.log('sendRequest - Socket event emitted successfully to receiver:', receiverId);
     } catch (socketError) {
       console.error('sendRequest - socket error:', socketError);
       // Don't fail the request if socket fails

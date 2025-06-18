@@ -7,7 +7,10 @@ let io;
 export const initializeSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: [
+        'http://localhost:5173',
+        'https://inkampus.netlify.app'
+      ],
       methods: ['GET', 'POST'],
       credentials: true
     }
@@ -40,6 +43,12 @@ export const initializeSocket = (server) => {
 
     // Join user's personal room
     socket.join(socket.user._id.toString());
+
+    // Handle test events
+    socket.on('test', (data) => {
+      console.log('Test event received from frontend:', data);
+      socket.emit('test:response', { message: 'Backend received test event', timestamp: new Date().toISOString() });
+    });
 
     // Handle friend requests
     socket.on('friend:request', async (data) => {
