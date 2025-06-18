@@ -245,10 +245,64 @@ export const getPendingRequests = async (req, res) => {
       status: 'pending'
     }).populate('sender', 'name email avatar');
 
+    // Convert to plain objects and ensure id field exists
+    const requestsData = pendingRequests.map(request => {
+      const requestData = request.toObject();
+      requestData.id = requestData._id.toString();
+      delete requestData._id;
+      
+      // Convert sender _id to id
+      if (requestData.sender) {
+        requestData.sender.id = requestData.sender._id.toString();
+        delete requestData.sender._id;
+      }
+      
+      return requestData;
+    });
+
     res.status(200).json({
       status: 'success',
       data: {
-        pendingRequests
+        pendingRequests: requestsData
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
+// Get sent requests
+export const getSentRequests = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const sentRequests = await Friend.find({
+      sender: userId,
+      status: 'pending'
+    }).populate('receiver', 'name email avatar');
+
+    // Convert to plain objects and ensure id field exists
+    const requestsData = sentRequests.map(request => {
+      const requestData = request.toObject();
+      requestData.id = requestData._id.toString();
+      delete requestData._id;
+      
+      // Convert receiver _id to id
+      if (requestData.receiver) {
+        requestData.receiver.id = requestData.receiver._id.toString();
+        delete requestData.receiver._id;
+      }
+      
+      return requestData;
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        sentRequests: requestsData
       }
     });
   } catch (error) {

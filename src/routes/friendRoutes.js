@@ -6,6 +6,7 @@ import {
   unfriend,
   getFriendsList,
   getPendingRequests,
+  getSentRequests,
   getSuggestions
 } from '../controllers/friendController.js';
 import { protect } from '../middleware/auth.js';
@@ -22,6 +23,7 @@ router.patch('/decline-request/:requestId', declineRequest);
 router.delete('/unfriend/:friendId', unfriend);
 router.get('/friends-list', getFriendsList);
 router.get('/pending-requests', getPendingRequests);
+router.get('/sent-requests', getSentRequests);
 router.get('/suggestions', getSuggestions);
 
 export default router; 
