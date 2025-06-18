@@ -3,10 +3,12 @@ import Notification from '../models/Notification.js';
 // Create notification
 const createNotification = async (data) => {
   try {
+    console.log('createNotification - creating notification with data:', data);
     const notification = await Notification.create(data);
+    console.log('createNotification - notification created successfully:', notification._id);
     return notification;
   } catch (error) {
-    console.error('Error creating notification:', error);
+    console.error('createNotification - error creating notification:', error);
     return null;
   }
 };
@@ -34,6 +36,7 @@ export const createCommentNotification = async (postId, commentId, senderId, rec
 
 // Create friend request notification
 export const createFriendRequestNotification = async (senderId, recipientId) => {
+  console.log('createFriendRequestNotification - senderId:', senderId, 'recipientId:', recipientId);
   return createNotification({
     type: 'friend_request',
     sender: senderId,

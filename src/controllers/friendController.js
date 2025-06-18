@@ -7,18 +7,24 @@ export const sendRequest = async (req, res) => {
   try {
     const { receiverId } = req.body;
     const senderId = req.user._id;
+    
+    console.log('sendRequest - senderId:', senderId);
+    console.log('sendRequest - receiverId:', receiverId);
 
     // Check if receiver exists
     const receiver = await User.findById(receiverId);
     if (!receiver) {
+      console.log('sendRequest - receiver not found');
       return res.status(404).json({
         status: 'error',
         message: 'User not found'
       });
     }
+    console.log('sendRequest - receiver found:', receiver.name);
 
     // Prevent self-friend request
     if (senderId.toString() === receiverId) {
+      console.log('sendRequest - self-friend request attempted');
       return res.status(400).json({
         status: 'error',
         message: 'You cannot send friend request to yourself'
@@ -34,6 +40,7 @@ export const sendRequest = async (req, res) => {
     });
 
     if (existingRequest) {
+      console.log('sendRequest - existing request found:', existingRequest.status);
       return res.status(400).json({
         status: 'error',
         message: 'Friend request already exists'
@@ -45,16 +52,26 @@ export const sendRequest = async (req, res) => {
       sender: senderId,
       receiver: receiverId
     });
+    console.log('sendRequest - friend request created:', friendRequest._id);
+    
     // Notify receiver
-    await createFriendRequestNotification(senderId, receiverId);
+    console.log('sendRequest - creating notification for receiver');
+    const notification = await createFriendRequestNotification(senderId, receiverId);
+    console.log('sendRequest - notification created:', notification ? notification._id : 'failed');
+    
+    // Convert to plain object and ensure id field exists
+    const friendRequestData = friendRequest.toObject();
+    friendRequestData.id = friendRequestData._id.toString();
+    delete friendRequestData._id;
 
     res.status(201).json({
       status: 'success',
       data: {
-        friendRequest
+        friendRequest: friendRequestData
       }
     });
   } catch (error) {
+    console.error('sendRequest - error:', error);
     res.status(400).json({
       status: 'error',
       message: error.message
