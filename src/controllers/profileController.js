@@ -257,7 +257,16 @@ export const uploadCoverPhoto = async (req, res) => {
 export const getMyProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password -otp');
-    res.status(200).json({ status: 'success', data: user });
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+    
+    // Convert MongoDB document to plain object and ensure id field exists
+    const userData = user.toObject();
+    userData.id = userData._id.toString();
+    delete userData._id;
+    
+    res.status(200).json({ status: 'success', data: userData });
   } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });
   }
@@ -278,8 +287,13 @@ export const getUserProfile = async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'User not found' });
     }
     
-    console.log('getUserProfile - returning user data:', user);
-    res.status(200).json({ status: 'success', data: user });
+    // Convert MongoDB document to plain object and ensure id field exists
+    const userData = user.toObject();
+    userData.id = userData._id.toString();
+    delete userData._id;
+    
+    console.log('getUserProfile - returning user data:', userData);
+    res.status(200).json({ status: 'success', data: userData });
   } catch (error) {
     console.error('getUserProfile - error:', error);
     res.status(500).json({ status: 'error', message: error.message });

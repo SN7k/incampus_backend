@@ -300,8 +300,13 @@ export const getSuggestions = async (req, res) => {
         relevance.push(user.role);
       }
 
+      // Convert MongoDB document to plain object and ensure id field exists
+      const userData = user.toObject();
+      userData.id = userData._id.toString();
+      delete userData._id;
+
       return {
-        ...user.toObject(),
+        ...userData,
         relevance
       };
     });
