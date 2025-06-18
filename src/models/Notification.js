@@ -37,6 +37,16 @@ const notificationSchema = new mongoose.Schema({
 notificationSchema.index({ recipient: 1, createdAt: -1 });
 notificationSchema.index({ recipient: 1, isRead: 1 });
 
+// Transform MongoDB documents to include id field
+notificationSchema.set('toJSON', {
+  transform: function(doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+    return ret;
+  }
+});
+
 const Notification = mongoose.model('Notification', notificationSchema);
 
 export default Notification; 

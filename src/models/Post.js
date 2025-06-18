@@ -18,6 +18,15 @@ const commentSchema = new mongoose.Schema({
   }
 });
 
+// Transform comment documents to include id field
+commentSchema.set('toJSON', {
+  transform: function(doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+    return ret;
+  }
+});
+
 const postSchema = new mongoose.Schema({
   author: {
     type: mongoose.Schema.Types.ObjectId,
@@ -67,6 +76,16 @@ const postSchema = new mongoose.Schema({
 
 // Index for efficient querying
 postSchema.index({ author: 1, createdAt: -1 });
+
+// Transform MongoDB documents to include id field
+postSchema.set('toJSON', {
+  transform: function(doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+    return ret;
+  }
+});
 
 const Post = mongoose.model('Post', postSchema);
 

@@ -143,6 +143,16 @@ userSchema.methods.verifyOTP = function(otp) {
   return isValid;
 };
 
+// Transform MongoDB documents to include id field
+userSchema.set('toJSON', {
+  transform: function(doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+    return ret;
+  }
+});
+
 const User = mongoose.model('User', userSchema);
 
 export default User;
