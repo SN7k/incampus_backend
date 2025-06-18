@@ -1,6 +1,7 @@
 import Friend from '../models/Friend.js';
 import User from '../models/User.js';
 import { createFriendRequestNotification, createFriendAcceptedNotification } from '../services/notificationService.js';
+import { getIO } from '../services/socketService.js';
 
 // Send friend request
 export const sendRequest = async (req, res) => {
@@ -59,6 +60,22 @@ export const sendRequest = async (req, res) => {
     const notification = await createFriendRequestNotification(senderId, receiverId);
     console.log('sendRequest - notification created:', notification ? notification._id : 'failed');
     
+    // Emit real-time notification via socket
+    try {
+      const io = getIO();
+      io.to(receiverId.toString()).emit('friend:request', {
+        fromUser: {
+          id: senderId,
+          name: req.user.name,
+          avatar: req.user.avatar
+        }
+      });
+      console.log('sendRequest - socket event emitted to receiver:', receiverId);
+    } catch (socketError) {
+      console.error('sendRequest - socket error:', socketError);
+      // Don't fail the request if socket fails
+    }
+    
     // Convert to plain object and ensure id field exists
     const friendRequestData = friendRequest.toObject();
     friendRequestData.id = friendRequestData._id.toString();
@@ -104,8 +121,25 @@ export const acceptRequest = async (req, res) => {
     // Update request status
     friendRequest.status = 'accepted';
     await friendRequest.save();
+    
     // Notify sender
     await createFriendAcceptedNotification(userId, friendRequest.sender);
+    
+    // Emit real-time notification via socket
+    try {
+      const io = getIO();
+      io.to(friendRequest.sender.toString()).emit('friend:accept', {
+        fromUser: {
+          id: userId,
+          name: req.user.name,
+          avatar: req.user.avatar
+        }
+      });
+      console.log('acceptRequest - socket event emitted to sender:', friendRequest.sender);
+    } catch (socketError) {
+      console.error('acceptRequest - socket error:', socketError);
+      // Don't fail the request if socket fails
+    }
 
     res.status(200).json({
       status: 'success',

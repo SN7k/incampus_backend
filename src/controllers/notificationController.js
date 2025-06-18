@@ -20,6 +20,27 @@ export const getNotifications = async (req, res) => {
       .populate('sender', 'name avatar universityId')
       .populate('post', 'text images createdAt');
       
+    // Transform MongoDB documents to include id field
+    const transformedNotifications = notifications.map(notification => {
+      const notificationData = notification.toObject();
+      notificationData.id = notificationData._id.toString();
+      delete notificationData._id;
+      
+      // Transform sender _id to id
+      if (notificationData.sender) {
+        notificationData.sender.id = notificationData.sender._id.toString();
+        delete notificationData.sender._id;
+      }
+      
+      // Transform post _id to id if it exists
+      if (notificationData.post) {
+        notificationData.post.id = notificationData.post._id.toString();
+        delete notificationData.post._id;
+      }
+      
+      return notificationData;
+    });
+      
     const totalCount = await Notification.countDocuments(query);
     const unreadCount = await Notification.countDocuments({ 
       recipient: userId, 
@@ -29,7 +50,7 @@ export const getNotifications = async (req, res) => {
     res.status(200).json({
       status: 'success',
       data: { 
-        notifications,
+        notifications: transformedNotifications,
         pagination: {
           total: totalCount,
           unreadCount,
@@ -128,9 +149,26 @@ export const createNotification = async (req, res) => {
       .populate('sender', 'name avatar universityId')
       .populate('post', 'text images createdAt');
     
+    // Transform the response to include id fields
+    const notificationData = populatedNotification.toObject();
+    notificationData.id = notificationData._id.toString();
+    delete notificationData._id;
+    
+    // Transform sender _id to id
+    if (notificationData.sender) {
+      notificationData.sender.id = notificationData.sender._id.toString();
+      delete notificationData.sender._id;
+    }
+    
+    // Transform post _id to id if it exists
+    if (notificationData.post) {
+      notificationData.post.id = notificationData.post._id.toString();
+      delete notificationData.post._id;
+    }
+    
     res.status(201).json({
       status: 'success',
-      data: { notification: populatedNotification }
+      data: { notification: notificationData }
     });
   } catch (error) {
     res.status(400).json({
