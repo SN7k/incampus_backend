@@ -31,7 +31,7 @@ app.set('trust proxy', 1);
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://inkampus.netlify.app',
+  'https://inkampus.netlify.app'
 ];
 
 const corsOptions = {
