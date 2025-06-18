@@ -48,9 +48,17 @@ export const createPost = async (req, res) => {
       });
     }
 
+    // Validate that either content or images are present
+    if ((!content || content.trim() === '') && images.length === 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Post must contain either content or media'
+      });
+    }
+
     const post = await Post.create({
       author,
-      content,
+      content: content ? content.trim() : '',
       images
     });
 

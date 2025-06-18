@@ -6,9 +6,12 @@ const storage = multer.memoryStorage();
 
 // File filter
 const fileFilter = (req, file, cb) => {
-  // Accept images only
-  if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-    return cb(new Error('Only image files are allowed!'), false);
+  // Accept images and videos
+  const allowedImageTypes = /\.(jpg|jpeg|png|gif|webp)$/i;
+  const allowedVideoTypes = /\.(mp4|avi|mov|wmv|flv|webm|mkv)$/i;
+  
+  if (!allowedImageTypes.test(file.originalname) && !allowedVideoTypes.test(file.originalname)) {
+    return cb(new Error('Only image and video files are allowed!'), false);
   }
   cb(null, true);
 };
