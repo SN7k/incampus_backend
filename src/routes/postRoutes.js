@@ -22,9 +22,9 @@ router.post(
   '/',
   upload.array('images', 5), // Allow up to 5 images per post
   [
-    body('text')
+    body('content')
       .trim()
-      .notEmpty().withMessage('Post text is required')
+      .notEmpty().withMessage('Post content is required')
       .isLength({ max: 2000 }).withMessage('Post cannot be more than 2000 characters')
   ],
   createPost

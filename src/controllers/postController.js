@@ -7,7 +7,7 @@ import { createLikeNotification, createCommentNotification } from '../services/n
 // Create post
 export const createPost = async (req, res) => {
   try {
-    const { text } = req.body;
+    const { content } = req.body;
     const author = req.user._id;
     let images = [];
 
@@ -50,7 +50,7 @@ export const createPost = async (req, res) => {
 
     const post = await Post.create({
       author,
-      text,
+      content,
       images
     });
 
