@@ -204,6 +204,51 @@ export const declineRequest = async (req, res) => {
   }
 };
 
+// Cancel sent friend request
+export const cancelRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const userId = req.user._id;
+
+    const friendRequest = await Friend.findById(requestId);
+    if (!friendRequest) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Friend request not found'
+      });
+    }
+
+    // Check if user is the sender
+    if (friendRequest.sender.toString() !== userId.toString()) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'You are not authorized to cancel this request'
+      });
+    }
+
+    // Check if request is still pending
+    if (friendRequest.status !== 'pending') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Cannot cancel a request that is not pending'
+      });
+    }
+
+    // Delete the friend request
+    await Friend.findByIdAndDelete(requestId);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Friend request cancelled successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 // Unfriend
 export const unfriend = async (req, res) => {
   try {

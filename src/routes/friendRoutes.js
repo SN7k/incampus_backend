@@ -3,6 +3,7 @@ import {
   sendRequest,
   acceptRequest,
   declineRequest,
+  cancelRequest,
   unfriend,
   getFriendsList,
   getPendingRequests,
@@ -20,6 +21,7 @@ router.use(protect);
 router.post('/send-request', sendRequest);
 router.patch('/accept-request/:requestId', acceptRequest);
 router.patch('/decline-request/:requestId', declineRequest);
+router.delete('/cancel-request/:requestId', cancelRequest);
 router.delete('/unfriend/:friendId', unfriend);
 router.get('/friends-list', getFriendsList);
 router.get('/pending-requests', getPendingRequests);
