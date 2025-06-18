@@ -256,7 +256,7 @@ export const uploadCoverPhoto = async (req, res) => {
 // Get my profile
 export const getMyProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password -otp');
+    const user = await User.findById(req.user.id).select('-password -otp');
     res.status(200).json({ status: 'success', data: user });
   } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });
