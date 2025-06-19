@@ -447,6 +447,14 @@ export const verifyOTPAndDeleteAccount = async (req, res) => {
       });
     }
 
+    // Delete user account and related data
+    // Delete posts
+    const Post = (await import('../models/Post.js')).default;
+    await Post.deleteMany({ author: userId });
+    // Delete notifications (sent or received)
+    const Notification = (await import('../models/Notification.js')).default;
+    await Notification.deleteMany({ $or: [ { recipient: userId }, { sender: userId } ] });
+    // Optionally: delete other related data (e.g., comments, friends)
     // Delete user account
     await User.findByIdAndDelete(userId);
 
