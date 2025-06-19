@@ -9,7 +9,8 @@ export const initializeSocket = (server) => {
     cors: {
       origin: [
         'http://localhost:5173',
-        'https://inkampus.netlify.app'
+        'https://inkampus.netlify.app',
+        'https://incampus.social'
       ],
       methods: ['GET', 'POST'],
       credentials: true
