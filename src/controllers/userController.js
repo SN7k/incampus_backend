@@ -27,6 +27,60 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
+// Search users
+export const searchUsers = async (req, res) => {
+  try {
+    const { q } = req.query;
+    
+    if (!q || q.trim() === '') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Search query is required'
+      });
+    }
+
+    const searchQuery = q.trim();
+    
+    // Create a case-insensitive regex pattern for searching
+    const regexPattern = new RegExp(searchQuery, 'i');
+    
+    // Search users by name, universityId, course, batch, or role
+    const users = await User.find({
+      $or: [
+        { name: { $regex: regexPattern } },
+        { universityId: { $regex: regexPattern } },
+        { course: { $regex: regexPattern } },
+        { batch: { $regex: regexPattern } },
+        { role: { $regex: regexPattern } },
+        { bio: { $regex: regexPattern } }
+      ]
+    })
+    .select('name email avatar role universityId course batch bio')
+    .limit(20); // Limit results to prevent performance issues
+
+    // Transform the results to match frontend expectations
+    const transformedUsers = users.map(user => {
+      const userData = user.toObject();
+      userData.id = userData._id.toString();
+      delete userData._id;
+      return userData;
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        users: transformedUsers
+      }
+    });
+  } catch (error) {
+    console.error('Search users error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 // Update current user profile
 export const updateCurrentUser = async (req, res) => {
   try {
