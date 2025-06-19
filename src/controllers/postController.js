@@ -106,8 +106,9 @@ export const getFeed = async (req, res) => {
     const posts = await Post.find({
       author: { $in: friendIds }
     })
-    .populate('author', 'name avatar')
+    .populate('author', 'name avatar universityId role')
     .populate('comments.user', 'name avatar')
+    .populate('likes', 'name avatar universityId role')
     .sort('-createdAt')
     .limit(20);
 
@@ -306,7 +307,9 @@ export const deletePost = async (req, res) => {
 export const getUserPosts = async (req, res) => {
   try {
     const { userId } = req.params;
-    const posts = await Post.find({ author: userId }).populate('author', 'name avatar universityId role');
+    const posts = await Post.find({ author: userId })
+      .populate('author', 'name avatar universityId role')
+      .populate('likes', 'name avatar universityId role');
     res.status(200).json({ status: 'success', data: { posts } });
   } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });
