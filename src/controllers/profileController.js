@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import cloudinary from '../config/cloudinary.js';
 import { validationResult } from 'express-validator';
+import Notification from '../models/Notification.js';
 
 // Get user profile
 export const getProfile = async (req, res) => {
@@ -296,6 +297,52 @@ export const getUserProfile = async (req, res) => {
     res.status(200).json({ status: 'success', data: userData });
   } catch (error) {
     console.error('getUserProfile - error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+};
+
+// Like a user profile
+export const likeProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const likerId = req.user._id;
+    if (likerId.toString() === userId) {
+      return res.status(400).json({ status: 'error', message: 'You cannot like your own profile.' });
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+    if (user.profileLikes.includes(likerId)) {
+      return res.status(400).json({ status: 'error', message: 'You already liked this profile.' });
+    }
+    user.profileLikes.push(likerId);
+    await user.save();
+    // Create notification
+    await Notification.create({
+      recipient: user._id,
+      sender: likerId,
+      type: 'like',
+    });
+    res.status(200).json({ status: 'success', message: 'Profile liked.' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+};
+
+// Unlike a user profile
+export const unlikeProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const likerId = req.user._id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+    user.profileLikes = user.profileLikes.filter(id => id.toString() !== likerId.toString());
+    await user.save();
+    res.status(200).json({ status: 'success', message: 'Profile unliked.' });
+  } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });
   }
 };

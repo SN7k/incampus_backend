@@ -1,5 +1,5 @@
 import express from 'express';
-import { getProfile, updateProfile, uploadAvatar, uploadCoverPhoto, setupProfile, getMyProfile, getUserProfile } from '../controllers/profileController.js';
+import { getProfile, updateProfile, uploadAvatar, uploadCoverPhoto, setupProfile, getMyProfile, getUserProfile, likeProfile, unlikeProfile } from '../controllers/profileController.js';
 import { protect } from '../middleware/auth.js';
 import upload from '../middleware/upload.js';
 import { body } from 'express-validator';
@@ -16,6 +16,10 @@ router.post('/avatar', upload.single('avatar'), uploadAvatar);
 router.post('/cover', upload.single('coverPhoto'), uploadCoverPhoto);
 router.get('/me', getMyProfile);
 router.get('/:userId', getUserProfile);
+
+// Like/unlike profile
+router.post('/:userId/like', likeProfile);
+router.post('/:userId/unlike', unlikeProfile);
 
 // Profile setup route
 router.post(
