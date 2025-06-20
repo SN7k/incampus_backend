@@ -296,17 +296,18 @@ export const getFriendsList = async (req, res) => {
         { receiver: userId }
       ],
       status: 'accepted'
-    }).populate('sender receiver', 'name email avatar');
+    }).populate('sender receiver', 'name email avatar role');
 
     const friends = friendships.map(friendship => {
       const friend = friendship.sender._id.toString() === userId.toString()
         ? friendship.receiver
         : friendship.sender;
       return {
-        _id: friend._id,
+        id: friend._id.toString(),
         name: friend.name,
         email: friend.email,
-        avatar: friend.avatar
+        avatar: friend.avatar,
+        role: friend.role
       };
     });
 
@@ -332,20 +333,18 @@ export const getPendingRequests = async (req, res) => {
     const pendingRequests = await Friend.find({
       receiver: userId,
       status: 'pending'
-    }).populate('sender', 'name email avatar');
+    }).populate('sender', 'name email avatar role');
 
     // Convert to plain objects and ensure id field exists
     const requestsData = pendingRequests.map(request => {
       const requestData = request.toObject();
       requestData.id = requestData._id.toString();
       delete requestData._id;
-      
       // Convert sender _id to id
       if (requestData.sender) {
         requestData.sender.id = requestData.sender._id.toString();
         delete requestData.sender._id;
       }
-      
       return requestData;
     });
 
@@ -371,20 +370,18 @@ export const getSentRequests = async (req, res) => {
     const sentRequests = await Friend.find({
       sender: userId,
       status: 'pending'
-    }).populate('receiver', 'name email avatar');
+    }).populate('receiver', 'name email avatar role');
 
     // Convert to plain objects and ensure id field exists
     const requestsData = sentRequests.map(request => {
       const requestData = request.toObject();
       requestData.id = requestData._id.toString();
       delete requestData._id;
-      
       // Convert receiver _id to id
       if (requestData.receiver) {
         requestData.receiver.id = requestData.receiver._id.toString();
         delete requestData.receiver._id;
       }
-      
       return requestData;
     });
 
