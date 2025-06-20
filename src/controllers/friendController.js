@@ -490,39 +490,40 @@ export const getSuggestions = async (req, res) => {
     const suggestionsWithRelevance = allSuggestions
       .filter(user => user && (user._id || user.id) && user.name)
       .map(user => {
-        user.id = (user._id && user._id.toString) ? user._id.toString() : (user.id || '');
-        delete user._id;
-        if (!user.id) return null;
+        const userObj = user.toObject ? user.toObject() : user;
+        userObj.id = (userObj._id && userObj._id.toString) ? userObj._id.toString() : (userObj.id || '');
+        delete userObj._id;
+        if (!userObj.id) return null;
         const relevance = [];
         let priority = 0;
-        if (user.course) {
-          relevance.push(user.course);
-          if (user.course === myCourse) {
+        if (userObj.course) {
+          relevance.push(userObj.course);
+          if (userObj.course === myCourse) {
             priority += 3;
-            relevance.push(`Same program as you: ${user.course}`);
+            relevance.push(`Same program as you: ${userObj.course}`);
           }
         }
-        if (user.batch) {
-          if (user.batch === myBatch) {
+        if (userObj.batch) {
+          if (userObj.batch === myBatch) {
             priority += 2;
-            relevance.push(`Same batch as you: ${user.batch}`);
+            relevance.push(`Same batch as you: ${userObj.batch}`);
           }
         }
-        if (user.role) {
-          relevance.push(user.role);
-          if (user.role === myRole) {
+        if (userObj.role) {
+          relevance.push(userObj.role);
+          if (userObj.role === myRole) {
             priority += 1;
-            relevance.push(`Same role as you: ${user.role}`);
+            relevance.push(`Same role as you: ${userObj.role}`);
           }
         }
         return {
-          user,
+          user: userObj,
           relevance,
           priority,
           mutualFriends: 0
         };
       })
-      .filter(Boolean);
+      .filter(s => s && s.user && s.user.id);
     // Sort by priority (highest first)
     suggestionsWithRelevance.sort((a, b) => b.priority - a.priority);
     res.status(200).json({
