@@ -465,7 +465,10 @@ export const getSuggestions = async (req, res) => {
     // Parse course/batch for each candidate
     const parsedCandidates = candidates.map(u => {
       const { course, batch } = extractCourseAndBatch(u.universityId);
-      return { ...u.toObject(), course, batch };
+      const userObj = u.toObject();
+      userObj.course = course;
+      userObj.batch = batch;
+      return userObj;
     });
 
     // 1. Priority: same course or batch or role
