@@ -495,9 +495,16 @@ export const getSuggestions = async (req, res) => {
       })
       .map(user => {
         const userObj = user.toObject ? user.toObject() : user;
-        userObj.id = (userObj._id && userObj._id.toString) ? userObj._id.toString() : (userObj.id || '');
+        // Always set id as a string
+        if (userObj._id && typeof userObj._id === 'object' && userObj._id.toString) {
+          userObj.id = userObj._id.toString();
+        } else if (typeof userObj.id === 'string') {
+          userObj.id = userObj.id;
+        } else {
+          userObj.id = '';
+        }
         delete userObj._id;
-        if (!userObj.id) return null;
+        if (!userObj.id || typeof userObj.id !== 'string') return null;
         const relevance = [];
         let priority = 0;
         if (userObj.course) {
