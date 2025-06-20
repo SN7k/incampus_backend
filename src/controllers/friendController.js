@@ -2,6 +2,7 @@ import Friend from '../models/Friend.js';
 import User from '../models/User.js';
 import { createFriendRequestNotification, createFriendAcceptedNotification } from '../services/notificationService.js';
 import { getIO } from '../services/socketService.js';
+import mongoose from 'mongoose';
 
 // Send friend request
 export const sendRequest = async (req, res) => {
@@ -442,24 +443,36 @@ export const getSuggestions = async (req, res) => {
       f.sender.toString() === userId.toString() ? f.receiver : f.sender
     );
 
-    console.log('getSuggestions - friendIds:', friendIds);
-    console.log('getSuggestions - pendingIds:', pendingIds);
+    const excludeIds = [...friendIds, ...pendingIds, userId];
 
-    // Get users who are not friends and don't have pending requests
-    const suggestions = await User.find({
-      _id: { 
-        $nin: [...friendIds, ...pendingIds, userId]
-      }
+    // 1. Priority suggestions: same course, batch, or role
+    const prioritySuggestions = await User.find({
+      _id: { $nin: excludeIds },
+      $or: [
+        { course: currentUser.course },
+        { batch: currentUser.batch },
+        { role: currentUser.role }
+      ]
     }).select('name email avatar role universityId course batch');
 
-    console.log('getSuggestions - raw suggestions:', suggestions);
+    // 2. If not enough, fill with random users
+    const alreadySuggestedIds = prioritySuggestions.map(u => u._id.toString());
+    let randomSuggestions = [];
+    const SUGGESTION_LIMIT = 10;
+    if (prioritySuggestions.length < SUGGESTION_LIMIT) {
+      randomSuggestions = await User.aggregate([
+        { $match: { _id: { $nin: excludeIds.concat(alreadySuggestedIds.map(id => new mongoose.Types.ObjectId(id))) } } },
+        { $sample: { size: SUGGESTION_LIMIT - prioritySuggestions.length } },
+        { $project: { name: 1, email: 1, avatar: 1, role: 1, universityId: 1, course: 1, batch: 1 } }
+      ]);
+    }
 
-    // Add relevance and priority information
-    const suggestionsWithRelevance = suggestions.map(user => {
+    // Combine and map to frontend format
+    const allSuggestions = [...prioritySuggestions, ...randomSuggestions];
+    const suggestionsWithRelevance = allSuggestions.map(user => {
       const relevance = [];
       let priority = 0;
-      
-      // Add course relevance - highest priority if same course
+      // Add course relevance
       if (user.course) {
         relevance.push(user.course);
         if (currentUser.course && user.course === currentUser.course) {
@@ -467,16 +480,14 @@ export const getSuggestions = async (req, res) => {
           relevance.push(`Same program as you: ${user.course}`);
         }
       }
-
-      // Add batch relevance - high priority if same batch
+      // Add batch relevance
       if (user.batch) {
         if (currentUser.batch && user.batch === currentUser.batch) {
           priority += 2;
           relevance.push(`Same batch as you: ${user.batch}`);
         }
       }
-
-      // Add role relevance - medium priority
+      // Add role relevance
       if (user.role) {
         relevance.push(user.role);
         if (currentUser.role && user.role === currentUser.role) {
@@ -484,25 +495,19 @@ export const getSuggestions = async (req, res) => {
           relevance.push(`Same role as you: ${user.role}`);
         }
       }
-
       // Convert MongoDB document to plain object and ensure id field exists
-      const userData = user.toObject();
+      const userData = user.toObject ? user.toObject() : user;
       userData.id = userData._id.toString();
       delete userData._id;
-
       return {
         user: userData,
         relevance,
         priority,
-        mutualFriends: 0 // We'll need a more complex query to calculate this accurately
+        mutualFriends: 0
       };
     });
-
-    // Sort suggestions by priority (highest first)
+    // Sort by priority (highest first)
     suggestionsWithRelevance.sort((a, b) => b.priority - a.priority);
-
-    console.log('getSuggestions - final suggestions:', suggestionsWithRelevance);
-
     res.status(200).json({
       status: 'success',
       data: suggestionsWithRelevance
