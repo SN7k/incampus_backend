@@ -487,38 +487,40 @@ export const getSuggestions = async (req, res) => {
     ].slice(0, SUGGESTION_LIMIT);
 
     // Map to frontend format
-    const suggestionsWithRelevance = allSuggestions.map(user => {
-      const relevance = [];
-      let priority = 0;
-      if (user.course) {
-        relevance.push(user.course);
-        if (user.course === myCourse) {
-          priority += 3;
-          relevance.push(`Same program as you: ${user.course}`);
+    const suggestionsWithRelevance = allSuggestions
+      .filter(user => user && user._id && user.name)
+      .map(user => {
+        const relevance = [];
+        let priority = 0;
+        if (user.course) {
+          relevance.push(user.course);
+          if (user.course === myCourse) {
+            priority += 3;
+            relevance.push(`Same program as you: ${user.course}`);
+          }
         }
-      }
-      if (user.batch) {
-        if (user.batch === myBatch) {
-          priority += 2;
-          relevance.push(`Same batch as you: ${user.batch}`);
+        if (user.batch) {
+          if (user.batch === myBatch) {
+            priority += 2;
+            relevance.push(`Same batch as you: ${user.batch}`);
+          }
         }
-      }
-      if (user.role) {
-        relevance.push(user.role);
-        if (user.role === myRole) {
-          priority += 1;
-          relevance.push(`Same role as you: ${user.role}`);
+        if (user.role) {
+          relevance.push(user.role);
+          if (user.role === myRole) {
+            priority += 1;
+            relevance.push(`Same role as you: ${user.role}`);
+          }
         }
-      }
-      user.id = user._id.toString();
-      delete user._id;
-      return {
-        user,
-        relevance,
-        priority,
-        mutualFriends: 0
-      };
-    });
+        user.id = user._id.toString();
+        delete user._id;
+        return {
+          user,
+          relevance,
+          priority,
+          mutualFriends: 0
+        };
+      });
     // Sort by priority (highest first)
     suggestionsWithRelevance.sort((a, b) => b.priority - a.priority);
     res.status(200).json({
