@@ -407,6 +407,15 @@ export const getSuggestions = async (req, res) => {
     const userId = req.user._id;
     console.log('getSuggestions - userId:', userId);
 
+    // Get the current user details for context matching
+    const currentUser = await User.findById(userId);
+    console.log('getSuggestions - currentUser:', {
+      id: currentUser._id,
+      course: currentUser.course,
+      batch: currentUser.batch,
+      role: currentUser.role
+    });
+
     // Get user's friends
     const friendships = await Friend.find({
       $or: [
@@ -445,18 +454,35 @@ export const getSuggestions = async (req, res) => {
 
     console.log('getSuggestions - raw suggestions:', suggestions);
 
-    // Add relevance information
+    // Add relevance and priority information
     const suggestionsWithRelevance = suggestions.map(user => {
       const relevance = [];
+      let priority = 0;
       
-      // Add course/batch relevance
-      if (user.course || user.batch) {
-        relevance.push(user.course || user.batch);
+      // Add course relevance - highest priority if same course
+      if (user.course) {
+        relevance.push(user.course);
+        if (currentUser.course && user.course === currentUser.course) {
+          priority += 3;
+          relevance.push(`Same program as you: ${user.course}`);
+        }
       }
 
-      // Add role relevance
+      // Add batch relevance - high priority if same batch
+      if (user.batch) {
+        if (currentUser.batch && user.batch === currentUser.batch) {
+          priority += 2;
+          relevance.push(`Same batch as you: ${user.batch}`);
+        }
+      }
+
+      // Add role relevance - medium priority
       if (user.role) {
         relevance.push(user.role);
+        if (currentUser.role && user.role === currentUser.role) {
+          priority += 1;
+          relevance.push(`Same role as you: ${user.role}`);
+        }
       }
 
       // Convert MongoDB document to plain object and ensure id field exists
@@ -465,10 +491,15 @@ export const getSuggestions = async (req, res) => {
       delete userData._id;
 
       return {
-        ...userData,
-        relevance
+        user: userData,
+        relevance,
+        priority,
+        mutualFriends: 0 // We'll need a more complex query to calculate this accurately
       };
     });
+
+    // Sort suggestions by priority (highest first)
+    suggestionsWithRelevance.sort((a, b) => b.priority - a.priority);
 
     console.log('getSuggestions - final suggestions:', suggestionsWithRelevance);
 
