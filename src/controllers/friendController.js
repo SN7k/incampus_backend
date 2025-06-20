@@ -296,7 +296,7 @@ export const getFriendsList = async (req, res) => {
         { receiver: userId }
       ],
       status: 'accepted'
-    }).populate('sender receiver', 'name email avatar role');
+    }).populate('sender receiver', 'name email avatar role universityId');
 
     const friends = friendships
       .filter(friendship => friendship.sender && friendship.receiver)
@@ -309,7 +309,8 @@ export const getFriendsList = async (req, res) => {
           name: friend.name,
           email: friend.email,
           avatar: friend.avatar,
-          role: friend.role
+          role: friend.role,
+          universityId: friend.universityId
         };
       });
 
@@ -335,7 +336,7 @@ export const getPendingRequests = async (req, res) => {
     const pendingRequests = await Friend.find({
       receiver: userId,
       status: 'pending'
-    }).populate('sender', 'name email avatar role');
+    }).populate('sender', 'name email avatar role universityId');
 
     // Convert to plain objects and ensure id field exists
     const requestsData = pendingRequests.map(request => {
@@ -372,7 +373,7 @@ export const getSentRequests = async (req, res) => {
     const sentRequests = await Friend.find({
       sender: userId,
       status: 'pending'
-    }).populate('receiver', 'name email avatar role');
+    }).populate('receiver', 'name email avatar role universityId');
 
     // Convert to plain objects and ensure id field exists
     const requestsData = sentRequests.map(request => {
