@@ -402,6 +402,17 @@ export const getSentRequests = async (req, res) => {
   }
 };
 
+// Helper to extract course and batch from universityId
+function extractCourseAndBatch(universityId) {
+  // Example: BWU/BCA/23/734
+  if (!universityId) return { course: '', batch: '' };
+  const parts = universityId.split('/');
+  return {
+    course: parts[1] || '',
+    batch: parts[2] ? '20' + parts[2] : '' // '23' -> '2023'
+  };
+}
+
 // Get friend suggestions
 export const getSuggestions = async (req, res) => {
   try {
@@ -410,11 +421,14 @@ export const getSuggestions = async (req, res) => {
 
     // Get the current user details for context matching
     const currentUser = await User.findById(userId);
+    const { course: myCourse, batch: myBatch } = extractCourseAndBatch(currentUser.universityId);
+    const myRole = currentUser.role;
     console.log('getSuggestions - currentUser:', {
       id: currentUser._id,
-      course: currentUser.course,
-      batch: currentUser.batch,
-      role: currentUser.role
+      universityId: currentUser.universityId,
+      course: myCourse,
+      batch: myBatch,
+      role: myRole
     });
 
     // Get user's friends
@@ -445,62 +459,62 @@ export const getSuggestions = async (req, res) => {
 
     const excludeIds = [...friendIds, ...pendingIds, userId];
 
-    // 1. Priority suggestions: same course, batch, or role
-    const prioritySuggestions = await User.find({
-      _id: { $nin: excludeIds },
-      $or: [
-        { course: currentUser.course },
-        { batch: currentUser.batch },
-        { role: currentUser.role }
-      ]
-    }).select('name email avatar role universityId course batch');
+    // Fetch all possible candidates (excluding friends, pending, self)
+    const candidates = await User.find({ _id: { $nin: excludeIds } })
+      .select('name email avatar role universityId');
 
-    // 2. If not enough, fill with random users
-    const alreadySuggestedIds = prioritySuggestions.map(u => u._id.toString());
-    let randomSuggestions = [];
+    // Parse course/batch for each candidate
+    const parsedCandidates = candidates.map(u => {
+      const { course, batch } = extractCourseAndBatch(u.universityId);
+      return { ...u.toObject(), course, batch };
+    });
+
+    // 1. Priority: same course or batch or role
+    let prioritySuggestions = parsedCandidates.filter(u =>
+      (u.course && u.course === myCourse) ||
+      (u.batch && u.batch === myBatch) ||
+      (u.role && u.role === myRole)
+    );
+
+    // 2. If not enough, fill with random users (other courses, faculty, etc)
+    const alreadySuggestedIds = new Set(prioritySuggestions.map(u => u._id.toString()));
+    let randomSuggestions = parsedCandidates.filter(u => !alreadySuggestedIds.has(u._id.toString()));
+    // Shuffle randomSuggestions
+    randomSuggestions = randomSuggestions.sort(() => Math.random() - 0.5);
     const SUGGESTION_LIMIT = 10;
-    if (prioritySuggestions.length < SUGGESTION_LIMIT) {
-      randomSuggestions = await User.aggregate([
-        { $match: { _id: { $nin: excludeIds.concat(alreadySuggestedIds.map(id => new mongoose.Types.ObjectId(id))) } } },
-        { $sample: { size: SUGGESTION_LIMIT - prioritySuggestions.length } },
-        { $project: { name: 1, email: 1, avatar: 1, role: 1, universityId: 1, course: 1, batch: 1 } }
-      ]);
-    }
+    const allSuggestions = [
+      ...prioritySuggestions,
+      ...randomSuggestions.slice(0, SUGGESTION_LIMIT - prioritySuggestions.length)
+    ].slice(0, SUGGESTION_LIMIT);
 
-    // Combine and map to frontend format
-    const allSuggestions = [...prioritySuggestions, ...randomSuggestions];
+    // Map to frontend format
     const suggestionsWithRelevance = allSuggestions.map(user => {
       const relevance = [];
       let priority = 0;
-      // Add course relevance
       if (user.course) {
         relevance.push(user.course);
-        if (currentUser.course && user.course === currentUser.course) {
+        if (user.course === myCourse) {
           priority += 3;
           relevance.push(`Same program as you: ${user.course}`);
         }
       }
-      // Add batch relevance
       if (user.batch) {
-        if (currentUser.batch && user.batch === currentUser.batch) {
+        if (user.batch === myBatch) {
           priority += 2;
           relevance.push(`Same batch as you: ${user.batch}`);
         }
       }
-      // Add role relevance
       if (user.role) {
         relevance.push(user.role);
-        if (currentUser.role && user.role === currentUser.role) {
+        if (user.role === myRole) {
           priority += 1;
           relevance.push(`Same role as you: ${user.role}`);
         }
       }
-      // Convert MongoDB document to plain object and ensure id field exists
-      const userData = user.toObject ? user.toObject() : user;
-      userData.id = userData._id.toString();
-      delete userData._id;
+      user.id = user._id.toString();
+      delete user._id;
       return {
-        user: userData,
+        user,
         relevance,
         priority,
         mutualFriends: 0
