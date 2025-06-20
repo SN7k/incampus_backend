@@ -488,8 +488,11 @@ export const getSuggestions = async (req, res) => {
 
     // Map to frontend format
     const suggestionsWithRelevance = allSuggestions
-      .filter(user => user && user._id && user.name)
+      .filter(user => user && (user._id || user.id) && user.name)
       .map(user => {
+        user.id = (user._id && user._id.toString) ? user._id.toString() : (user.id || '');
+        delete user._id;
+        if (!user.id) return null;
         const relevance = [];
         let priority = 0;
         if (user.course) {
@@ -512,15 +515,14 @@ export const getSuggestions = async (req, res) => {
             relevance.push(`Same role as you: ${user.role}`);
           }
         }
-        user.id = user._id.toString();
-        delete user._id;
         return {
           user,
           relevance,
           priority,
           mutualFriends: 0
         };
-      });
+      })
+      .filter(Boolean);
     // Sort by priority (highest first)
     suggestionsWithRelevance.sort((a, b) => b.priority - a.priority);
     res.status(200).json({
