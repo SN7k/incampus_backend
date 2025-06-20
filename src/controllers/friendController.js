@@ -298,18 +298,20 @@ export const getFriendsList = async (req, res) => {
       status: 'accepted'
     }).populate('sender receiver', 'name email avatar role');
 
-    const friends = friendships.map(friendship => {
-      const friend = friendship.sender._id.toString() === userId.toString()
-        ? friendship.receiver
-        : friendship.sender;
-      return {
-        id: friend._id.toString(),
-        name: friend.name,
-        email: friend.email,
-        avatar: friend.avatar,
-        role: friend.role
-      };
-    });
+    const friends = friendships
+      .filter(friendship => friendship.sender && friendship.receiver)
+      .map(friendship => {
+        const friend = friendship.sender._id.toString() === userId.toString()
+          ? friendship.receiver
+          : friendship.sender;
+        return {
+          id: friend._id.toString(),
+          name: friend.name,
+          email: friend.email,
+          avatar: friend.avatar,
+          role: friend.role
+        };
+      });
 
     res.status(200).json({
       status: 'success',
