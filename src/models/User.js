@@ -24,7 +24,8 @@ const userSchema = new mongoose.Schema({
   // Profile fields
   name: {
     type: String,
-    trim: true
+    trim: true,
+    required: [true, 'Please provide your name']
   },
   bio: {
     type: String,

@@ -489,6 +489,10 @@ export const getSuggestions = async (req, res) => {
     // Map to frontend format
     const suggestionsWithRelevance = allSuggestions
       .filter(user => user && (user._id || user.id) && user.name)
+      .filter(user => {
+        const userObj = user.toObject ? user.toObject() : user;
+        return userObj && userObj.name && (userObj._id || userObj.id);
+      })
       .map(user => {
         const userObj = user.toObject ? user.toObject() : user;
         userObj.id = (userObj._id && userObj._id.toString) ? userObj._id.toString() : (userObj.id || '');
@@ -523,7 +527,7 @@ export const getSuggestions = async (req, res) => {
           mutualFriends: 0
         };
       })
-      .filter(s => s && s.user && s.user.id);
+      .filter(s => s && s.user && s.user.id && s.user.name);
     // Sort by priority (highest first)
     suggestionsWithRelevance.sort((a, b) => b.priority - a.priority);
     res.status(200).json({
