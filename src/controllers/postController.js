@@ -84,38 +84,66 @@ export const getFeed = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Get user's friends
+    // 1. Get user's friends
     const friendships = await Friend.find({
-      $or: [
-        { sender: userId },
-        { receiver: userId }
-      ],
+      $or: [{ sender: userId }, { receiver: userId }],
       status: 'accepted'
     });
-
-    const friendIds = friendships.map(friendship => 
-      friendship.sender.toString() === userId.toString()
-        ? friendship.receiver
-        : friendship.sender
+    const friendIds = friendships.map(friendship =>
+      friendship.sender.equals(userId) ? friendship.receiver : friendship.sender
     );
 
-    // Add user's own ID to see their posts too
-    friendIds.push(userId);
+    // 2. Get posts from the user and their friends
+    const friendsPosts = await Post.find({ author: { $in: [...friendIds, userId] } })
+      .populate('author', 'name avatar universityId role')
+      .populate({
+        path: 'comments.user',
+        select: 'name avatar'
+      })
+      .sort('-createdAt')
+      .limit(50) // Increased limit for a richer feed
+      .lean(); // Use lean for better performance
 
-    // Get posts from friends
-    const posts = await Post.find({
-      author: { $in: friendIds }
+    // 3. Get posts liked by friends
+    const likedByFriendsPosts = await Post.find({
+      likes: { $in: friendIds }, // Find posts liked by any of the user's friends
+      author: { $nin: [...friendIds, userId] } // Exclude posts already authored by user/friends
     })
-    .populate('author', 'name avatar universityId role')
-    .populate('comments.user', 'name avatar')
-    .populate('likes', 'name avatar universityId role')
-    .sort('-createdAt')
-    .limit(20);
+      .populate('author', 'name avatar universityId role')
+      .populate({
+        path: 'comments.user',
+        select: 'name avatar'
+      })
+      .populate({
+        path: 'likes',
+        select: 'name _id'
+      })
+      .sort('-createdAt')
+      .limit(20)
+      .lean();
+
+    // 4. Add social context to posts liked by friends
+    const postsWithSocialContext = likedByFriendsPosts.map(post => {
+      // Find the first friend who liked this post
+      const likingFriend = post.likes.find(like => friendIds.some(friendId => friendId.equals(like._id)));
+      return {
+        ...post,
+        likedByFriend: likingFriend ? likingFriend.name : null // Add the name of the friend who liked it
+      };
+    });
+
+    // 5. Combine, de-duplicate, and sort posts
+    const allPosts = [...friendsPosts, ...postsWithSocialContext];
+    
+    const uniquePosts = Array.from(new Map(allPosts.map(post => [post._id.toString(), post])).values());
+
+    // Sort by creation date in descending order
+    uniquePosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     res.status(200).json({
       status: 'success',
       data: {
-        posts
+        posts: uniquePosts.slice(0, 50) // Limit the final feed size
       }
     });
   } catch (error) {
