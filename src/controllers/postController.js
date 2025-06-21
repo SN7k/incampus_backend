@@ -167,11 +167,11 @@ export const toggleLike = async (req, res) => {
       });
     }
 
-    const isLiked = post.likes.includes(userId);
+    const isLiked = post.likes.some(likeId => likeId.equals(userId));
 
     if (isLiked) {
       // Unlike
-      post.likes = post.likes.filter(id => id.toString() !== userId.toString());
+      post.likes.pull(userId);
     } else {
       // Like
       post.likes.push(userId);
@@ -186,7 +186,7 @@ export const toggleLike = async (req, res) => {
     res.status(200).json({
       status: 'success',
       data: {
-        likes: post.likes.length,
+        likesCount: post.likes.length,
         isLiked: !isLiked
       }
     });
