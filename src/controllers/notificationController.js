@@ -124,7 +124,7 @@ export const markAllAsRead = async (req, res) => {
 // Create a notification
 export const createNotification = async (req, res) => {
   try {
-    const { recipient, type, post, comment } = req.body;
+    const { recipient, type, post } = req.body;
     const sender = req.user._id;
     
     // Don't create self-notifications
@@ -141,7 +141,6 @@ export const createNotification = async (req, res) => {
       sender,
       type,
       post,
-      comment,
       isRead: false
     });
     

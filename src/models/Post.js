@@ -1,32 +1,5 @@
 import mongoose from 'mongoose';
 
-const commentSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  text: {
-    type: String,
-    required: [true, 'Comment text is required'],
-    trim: true,
-    maxlength: [500, 'Comment cannot be more than 500 characters']
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
-
-// Transform comment documents to include id field
-commentSchema.set('toJSON', {
-  transform: function(doc, ret) {
-    ret.id = ret._id;
-    delete ret._id;
-    return ret;
-  }
-});
-
 const postSchema = new mongoose.Schema({
   author: {
     type: mongoose.Schema.Types.ObjectId,
@@ -67,7 +40,6 @@ const postSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
-  comments: [commentSchema],
   createdAt: {
     type: Date,
     default: Date.now

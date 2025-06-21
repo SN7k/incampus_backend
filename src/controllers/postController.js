@@ -96,10 +96,6 @@ export const getFeed = async (req, res) => {
     // 2. Get posts from the user and their friends
     const friendsPosts = await Post.find({ author: { $in: [...friendIds, userId] } })
       .populate('author', 'name avatar universityId role')
-      .populate({
-        path: 'comments.user',
-        select: 'name avatar'
-      })
       .sort('-createdAt')
       .limit(50) // Increased limit for a richer feed
       .lean(); // Use lean for better performance
@@ -110,10 +106,6 @@ export const getFeed = async (req, res) => {
       author: { $nin: [...friendIds, userId] } // Exclude posts already authored by user/friends
     })
       .populate('author', 'name avatar universityId role')
-      .populate({
-        path: 'comments.user',
-        select: 'name avatar'
-      })
       .populate({
         path: 'likes',
         select: 'name _id'
@@ -138,12 +130,19 @@ export const getFeed = async (req, res) => {
     const uniquePosts = Array.from(new Map(allPosts.map(post => [post._id.toString(), post])).values());
 
     // Sort by creation date in descending order
-    uniquePosts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    uniquePosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // Manually map _id to id for each post
+    const finalPosts = uniquePosts.map(post => {
+      post.id = post._id.toString();
+      delete post._id;
+      return post;
+    });
 
     res.status(200).json({
       status: 'success',
       data: {
-        posts: uniquePosts.slice(0, 50) // Limit the final feed size
+        posts: finalPosts.slice(0, 50) // Limit the final feed size
       }
     });
   } catch (error) {

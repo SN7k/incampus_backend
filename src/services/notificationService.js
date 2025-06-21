@@ -23,17 +23,6 @@ export const createLikeNotification = async (postId, senderId, recipientId) => {
   });
 };
 
-// Create comment notification
-export const createCommentNotification = async (postId, commentId, senderId, recipientId) => {
-  return createNotification({
-    type: 'comment',
-    sender: senderId,
-    recipient: recipientId,
-    post: postId,
-    comment: commentId
-  });
-};
-
 // Create friend request notification
 export const createFriendRequestNotification = async (senderId, recipientId) => {
   console.log('createFriendRequestNotification - senderId:', senderId, 'recipientId:', recipientId);
