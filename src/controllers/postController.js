@@ -2,7 +2,7 @@ import Post from '../models/Post.js';
 import Friend from '../models/Friend.js';
 import Notification from '../models/Notification.js';
 import cloudinary from '../config/cloudinary.js';
-import { createLikeNotification, createCommentNotification } from '../services/notificationService.js';
+import { createLikeNotification } from '../services/notificationService.js';
 
 // Create post
 export const createPost = async (req, res) => {
@@ -188,52 +188,6 @@ export const toggleLike = async (req, res) => {
       data: {
         likes: post.likes.length,
         isLiked: !isLiked
-      }
-    });
-  } catch (error) {
-    res.status(400).json({
-      status: 'error',
-      message: error.message
-    });
-  }
-};
-
-// Add comment
-export const addComment = async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const { text } = req.body;
-    const userId = req.user._id;
-
-    const post = await Post.findById(postId).populate('author', '_id');
-    if (!post) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Post not found'
-      });
-    }
-
-    post.comments.push({
-      user: userId,
-      text
-    });
-
-    await post.save();
-
-    // Populate the new comment's user details
-    await post.populate('comments.user', 'name avatar');
-
-    const newComment = post.comments[post.comments.length - 1];
-
-    // Notify post author if not self
-    if (post.author._id.toString() !== userId.toString()) {
-      await createCommentNotification(post._id, newComment._id, userId, post.author._id);
-    }
-
-    res.status(201).json({
-      status: 'success',
-      data: {
-        comment: newComment
       }
     });
   } catch (error) {
