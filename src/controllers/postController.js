@@ -132,17 +132,25 @@ export const getFeed = async (req, res) => {
     // Sort by creation date in descending order
     uniquePosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Manually map _id to id for each post
+    // Manually process posts to add computed properties
     const finalPosts = uniquePosts.map(post => {
-      post.id = post._id.toString();
-      delete post._id;
-      return post;
+      const postObject = { ...post, id: post._id.toString() };
+      
+      // Add isLiked and likesCount properties
+      postObject.isLiked = post.likes.some(like => like.equals(userId));
+      postObject.likesCount = post.likes.length;
+
+      // Clean up the post object before sending
+      delete postObject._id;
+      delete postObject.likes; // No longer need to send the full array
+      
+      return postObject;
     });
 
     res.status(200).json({
       status: 'success',
       data: {
-        posts: finalPosts.slice(0, 50) // Limit the final feed size
+        posts: finalPosts.slice(0, 50)
       }
     });
   } catch (error) {
