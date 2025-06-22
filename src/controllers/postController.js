@@ -288,11 +288,50 @@ export const deletePost = async (req, res) => {
 export const getUserPosts = async (req, res) => {
   try {
     const { userId } = req.params;
+    
+    // Validate userId parameter
+    if (!userId) {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: 'User ID is required' 
+      });
+    }
+    
+    // Validate if userId is a valid MongoDB ObjectId
+    const mongoose = (await import('mongoose')).default;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      console.log('getUserPosts: Invalid ObjectId format for userId:', userId);
+      return res.status(400).json({ 
+        status: 'error', 
+        message: 'Invalid user ID format' 
+      });
+    }
+    
+    console.log('getUserPosts: Fetching posts for userId:', userId);
+    
     const posts = await Post.find({ author: userId })
       .populate('author', 'name avatar universityId role')
       .populate('likes', 'name avatar universityId role');
-    res.status(200).json({ status: 'success', data: { posts } });
+    
+    console.log('getUserPosts: Found posts count:', posts.length);
+    
+    // Transform posts to include id field and ensure proper structure
+    const transformedPosts = posts.map(post => {
+      const postObj = post.toObject ? post.toObject() : post;
+      postObj.id = postObj._id.toString();
+      delete postObj._id;
+      return postObj;
+    });
+    
+    res.status(200).json({ 
+      status: 'success', 
+      data: { posts: transformedPosts } 
+    });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: error.message });
+    console.error('getUserPosts error:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: error.message || 'Failed to fetch user posts' 
+    });
   }
 };
