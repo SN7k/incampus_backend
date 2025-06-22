@@ -371,6 +371,7 @@ export const resendOTP = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email, universityId, role } = req.body;
+    console.log('Forgot password request:', { email, universityId, role });
     // Find user by email or universityId and role
     const user = await User.findOne({
       $or: [
@@ -380,6 +381,7 @@ export const forgotPassword = async (req, res) => {
       role
     });
     if (!user) {
+      console.log('User not found for forgot password:', { email, universityId, role });
       return res.status(404).json({ status: 'error', message: 'User not found' });
     }
     // Generate OTP
@@ -387,6 +389,7 @@ export const forgotPassword = async (req, res) => {
     await user.save();
     // Send OTP to user's email
     await sendOTPEmail(user.email, otp);
+    console.log('OTP sent for forgot password:', user.email);
     res.status(200).json({ status: 'success', message: 'OTP sent to your email' });
   } catch (error) {
     console.error('Forgot password error:', error);
