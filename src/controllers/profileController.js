@@ -56,7 +56,10 @@ export const setupProfile = async (req, res) => {
 
     // Handle avatar if provided
     if (avatar && avatar.url) {
-      // Avatar is already uploaded, just save the URL
+      // Delete old avatar from Cloudinary if publicId is different
+      if (user.avatar && user.avatar.publicId && user.avatar.publicId !== avatar.publicId) {
+        await cloudinary.uploader.destroy(user.avatar.publicId);
+      }
       updateData.avatar = {
         url: avatar.url,
         publicId: avatar.publicId || undefined
@@ -65,7 +68,10 @@ export const setupProfile = async (req, res) => {
 
     // Handle cover photo if provided
     if (coverPhoto && coverPhoto.url) {
-      // Cover photo is already uploaded, just save the URL
+      // Delete old cover photo from Cloudinary if publicId is different
+      if (user.coverPhoto && user.coverPhoto.publicId && user.coverPhoto.publicId !== coverPhoto.publicId) {
+        await cloudinary.uploader.destroy(user.coverPhoto.publicId);
+      }
       updateData.coverPhoto = {
         url: coverPhoto.url,
         publicId: coverPhoto.publicId || undefined
@@ -125,29 +131,43 @@ export const updateProfile = async (req, res) => {
     if (achievements !== undefined) updateData.achievements = achievements;
     if (interests !== undefined) updateData.interests = interests;
 
+    // Fetch current user for comparison
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+
     // Handle avatar if provided (object with url and publicId)
     if (avatar && typeof avatar === 'object' && avatar.url) {
+      // Delete old avatar from Cloudinary if publicId is different
+      if (user.avatar && user.avatar.publicId && user.avatar.publicId !== avatar.publicId) {
+        await cloudinary.uploader.destroy(user.avatar.publicId);
+      }
       updateData.avatar = avatar;
     }
 
     // Handle cover photo if provided (object with url and publicId)
     if (coverPhoto && typeof coverPhoto === 'object' && coverPhoto.url) {
+      // Delete old cover photo from Cloudinary if publicId is different
+      if (user.coverPhoto && user.coverPhoto.publicId && user.coverPhoto.publicId !== coverPhoto.publicId) {
+        await cloudinary.uploader.destroy(user.coverPhoto.publicId);
+      }
       updateData.coverPhoto = coverPhoto;
     }
 
     console.log('Updating profile with data:', updateData);
 
-    const user = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       { $set: updateData },
       { new: true, runValidators: true }
     ).select('-password -otp');
 
-    console.log('Profile updated successfully:', user);
+    console.log('Profile updated successfully:', updatedUser);
 
     res.status(200).json({
       status: 'success',
-      data: user
+      data: updatedUser
     });
   } catch (error) {
     console.error('Profile update error:', error);
