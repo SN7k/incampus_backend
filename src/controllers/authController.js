@@ -365,4 +365,59 @@ export const resendOTP = async (req, res) => {
       message: 'An error occurred while resending OTP'
     });
   }
+};
+
+// Send OTP for forgot password
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email, universityId, role } = req.body;
+    // Find user by email or universityId and role
+    const user = await User.findOne({
+      $or: [
+        { email: email },
+        { universityId: universityId }
+      ],
+      role
+    });
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+    // Generate OTP
+    const otp = user.generateOTP();
+    await user.save();
+    // Send OTP to user's email
+    await sendOTPEmail(user.email, otp);
+    res.status(200).json({ status: 'success', message: 'OTP sent to your email' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to send OTP' });
+  }
+};
+
+// Reset password with OTP
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, universityId, otp, newPassword, role } = req.body;
+    const user = await User.findOne({
+      $or: [
+        { email: email },
+        { universityId: universityId }
+      ],
+      role
+    });
+    if (!user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+    // Verify OTP
+    if (!user.verifyOTP(otp)) {
+      return res.status(400).json({ status: 'error', message: 'Invalid or expired OTP' });
+    }
+    user.password = newPassword;
+    user.otp = undefined;
+    await user.save();
+    res.status(200).json({ status: 'success', message: 'Password reset successful' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to reset password' });
+  }
 }; 

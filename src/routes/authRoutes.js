@@ -1,5 +1,5 @@
 import express from 'express';
-import { signup, login, verifyOTP, resendOTP } from '../controllers/authController.js';
+import { signup, login, verifyOTP, resendOTP, forgotPassword, resetPassword } from '../controllers/authController.js';
 import { body } from 'express-validator';
 
 const router = express.Router();
@@ -28,5 +28,9 @@ router.post(
 router.post('/verify-otp', verifyOTP);
 
 router.post('/resend-otp', resendOTP);
+
+router.post('/forgot-password', forgotPassword);
+
+router.post('/reset-password', resetPassword);
 
 export default router; 
