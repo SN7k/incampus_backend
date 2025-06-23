@@ -13,8 +13,10 @@ export const createPost = async (req, res) => {
 
     // Handle multiple image uploads if present
     if (req.files && req.files.length > 0) {
-      // Process each uploaded file
-      for (const file of req.files) {
+      // Process each uploaded file (maximum 3)
+      const filesToProcess = req.files.slice(0, 3); // Limit to 3 images
+      
+      for (const file of filesToProcess) {
         const b64 = Buffer.from(file.buffer).toString('base64');
         const dataURI = `data:${file.mimetype};base64,${b64}`;
 

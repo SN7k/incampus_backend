@@ -18,7 +18,7 @@ router.use(protect);
 // Post routes
 router.post(
   '/',
-  upload.array('images', 5), // Allow up to 5 images per post
+  upload.array('images', 3), // Allow up to 3 images per post (changed from 5)
   [
     body('content')
       .optional()
