@@ -328,6 +328,57 @@ export const getFriendsList = async (req, res) => {
   }
 };
 
+// Get friends list for a specific user
+export const getUserFriends = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Validate userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid user ID'
+      });
+    }
+
+    const friendships = await Friend.find({
+      $or: [
+        { sender: userId },
+        { receiver: userId }
+      ],
+      status: 'accepted'
+    }).populate('sender receiver', 'name email avatar role universityId');
+
+    const friends = friendships
+      .filter(friendship => friendship.sender && friendship.receiver)
+      .map(friendship => {
+        const friend = friendship.sender._id.toString() === userId.toString()
+          ? friendship.receiver
+          : friendship.sender;
+        return {
+          id: friend._id.toString(),
+          name: friend.name,
+          email: friend.email,
+          avatar: friend.avatar,
+          role: friend.role,
+          universityId: friend.universityId
+        };
+      });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        friends
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 // Get pending requests
 export const getPendingRequests = async (req, res) => {
   try {
