@@ -16,38 +16,75 @@ export const createPost = async (req, res) => {
       // Process each uploaded file (maximum 3)
       const filesToProcess = req.files.slice(0, 3); // Limit to 3 images
       
+      // Check if all files are images
       for (const file of filesToProcess) {
-        const b64 = Buffer.from(file.buffer).toString('base64');
-        const dataURI = `data:${file.mimetype};base64,${b64}`;
+        if (!file.mimetype.startsWith('image/')) {
+          return res.status(400).json({
+            status: 'error',
+            message: 'Only image files are allowed. Videos are not supported.'
+          });
+        }
+      }
+      
+      try {
+        for (const file of filesToProcess) {
+          const b64 = Buffer.from(file.buffer).toString('base64');
+          const dataURI = `data:${file.mimetype};base64,${b64}`;
 
-        const result = await cloudinary.uploader.upload(dataURI, {
-          folder: 'incampus/posts',
-          resource_type: 'auto'
-        });
+          const result = await cloudinary.uploader.upload(dataURI, {
+            folder: 'incampus/posts',
+            resource_type: 'image',
+            timeout: 60000 // 60 seconds timeout
+          });
 
-        images.push({
-          type: file.mimetype.startsWith('image/') ? 'image' : 'video',
-          url: result.secure_url,
-          publicId: result.public_id
+          images.push({
+            type: 'image',
+            url: result.secure_url,
+            publicId: result.public_id
+          });
+        }
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        return res.status(500).json({
+          status: 'error',
+          message: 'Failed to upload images. Please try again later.',
+          details: process.env.NODE_ENV === 'development' ? uploadError.message : undefined
         });
       }
     }
 
     // Handle single image upload for backward compatibility
     if (req.file && images.length === 0) {
-      const b64 = Buffer.from(req.file.buffer).toString('base64');
-      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      if (!req.file.mimetype.startsWith('image/')) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Only image files are allowed. Videos are not supported.'
+        });
+      }
+      
+      try {
+        const b64 = Buffer.from(req.file.buffer).toString('base64');
+        const dataURI = `data:${req.file.mimetype};base64,${b64}`;
 
-      const result = await cloudinary.uploader.upload(dataURI, {
-        folder: 'incampus/posts',
-        resource_type: 'auto'
-      });
+        const result = await cloudinary.uploader.upload(dataURI, {
+          folder: 'incampus/posts',
+          resource_type: 'image',
+          timeout: 60000 // 60 seconds timeout
+        });
 
-      images.push({
-        type: req.file.mimetype.startsWith('image/') ? 'image' : 'video',
-        url: result.secure_url,
-        publicId: result.public_id
-      });
+        images.push({
+          type: 'image',
+          url: result.secure_url,
+          publicId: result.public_id
+        });
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        return res.status(500).json({
+          status: 'error',
+          message: 'Failed to upload image. Please try again later.',
+          details: process.env.NODE_ENV === 'development' ? uploadError.message : undefined
+        });
+      }
     }
 
     // Validate that either content or images are present
@@ -74,9 +111,11 @@ export const createPost = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(400).json({
+    console.error('Post creation error:', error);
+    res.status(500).json({
       status: 'error',
-      message: error.message
+      message: 'Failed to create post. Please try again later.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
